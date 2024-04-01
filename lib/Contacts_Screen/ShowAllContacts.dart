@@ -1,3 +1,5 @@
+import 'package:cbsp_flutter_app/Contacts_Screen/AddFriend.dart';
+import 'package:cbsp_flutter_app/Settings/Settings.dart';
 import 'package:flutter/material.dart';
 
 class ShowAllContacts extends StatefulWidget {
@@ -75,11 +77,20 @@ class _ShowAllContactsState extends State<ShowAllContacts> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: CustomAppBar2(
+        onAddFriendPressed: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (context) => AddFriend()),
+          );
+        },
         onSearchPressed: () {
           // Add search functionality
         },
         onSettingsPressed: () {
-          // Add settings functionality
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (context) => Settings()),
+          );
         },
       ),
       body: SingleChildScrollView(
@@ -145,12 +156,14 @@ class CustomAppBar2 extends StatelessWidget implements PreferredSizeWidget {
   final double height;
   final VoidCallback onSearchPressed;
   final VoidCallback onSettingsPressed;
+  final VoidCallback onAddFriendPressed;
 
   const CustomAppBar2({
     Key? key,
     this.height = kToolbarHeight,
     required this.onSearchPressed,
     required this.onSettingsPressed,
+    required this.onAddFriendPressed,
   }) : super(key: key);
 
   @override
@@ -162,7 +175,7 @@ class CustomAppBar2 extends StatelessWidget implements PreferredSizeWidget {
           Text(
             'Select contact',
             style: TextStyle(
-              fontSize: 20,
+              fontSize: 18,
               color: Colors.black,
               fontWeight: FontWeight.bold,
             ),
@@ -170,6 +183,13 @@ class CustomAppBar2 extends StatelessWidget implements PreferredSizeWidget {
         ],
       ),
       actions: [
+        IconButton(
+          onPressed: onAddFriendPressed,
+          icon: Icon(
+            Icons.group_add_rounded,
+            color: Colors.black,
+          ),
+        ),
         IconButton(
           onPressed: onSearchPressed,
           icon: Icon(

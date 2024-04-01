@@ -2,12 +2,14 @@ import 'package:flutter/material.dart';
 
 class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
   final double height;
+  final bool showSearchIcon; // New property to control the visibility of the search icon
   final VoidCallback onSearchPressed;
   final VoidCallback onSettingsPressed;
 
   const CustomAppBar({
     Key? key,
     this.height = kToolbarHeight,
+    required this.showSearchIcon,
     required this.onSearchPressed,
     required this.onSettingsPressed,
   }) : super(key: key);
@@ -21,7 +23,7 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
           Text(
             'Comm ',
             style: TextStyle(
-              fontSize: 30,
+              fontSize: 25,
               color: Colors.blue,
               fontWeight: FontWeight.bold,
             ),
@@ -29,7 +31,7 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
           Text(
             'Fusion',
             style: TextStyle(
-              fontSize: 30,
+              fontSize: 25,
               color: Colors.black,
               fontWeight: FontWeight.bold,
             ),
@@ -37,13 +39,14 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
         ],
       ),
       actions: [
-        IconButton(
-          onPressed: onSearchPressed,
-          icon: Icon(
-            Icons.search,
-            color: Colors.black,
+        if (showSearchIcon) // Show search icon only if showSearchIcon is true
+          IconButton(
+            onPressed: onSearchPressed,
+            icon: Icon(
+              Icons.search,
+              color: Colors.black,
+            ),
           ),
-        ),
         IconButton(
           onPressed: onSettingsPressed,
           icon: Icon(
