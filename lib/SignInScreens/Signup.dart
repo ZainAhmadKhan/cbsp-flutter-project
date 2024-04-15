@@ -1,5 +1,5 @@
 import 'package:cbsp_flutter_app/CustomWidget/RoundedTextField.dart';
-import 'package:cbsp_flutter_app/sign_login_screens/UploadProfileImg.dart';
+import 'package:cbsp_flutter_app/SignInScreens/UploadProfileImg.dart';
 import 'package:flutter/material.dart';
 
 

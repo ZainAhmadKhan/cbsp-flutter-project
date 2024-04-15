@@ -1,7 +1,6 @@
-
 import 'package:cbsp_flutter_app/CustomWidget/RoundedTextField.dart';
 import 'package:cbsp_flutter_app/Dashboard/Dashboard.dart';
-import 'package:cbsp_flutter_app/sign_login_screens/Signup.dart';
+import 'package:cbsp_flutter_app/SignInScreens/Signup.dart';
 import 'package:flutter/material.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -15,14 +14,6 @@ class _LoginScreenState extends State<LoginScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        leading: IconButton(
-          icon: Icon(Icons.arrow_back,color: Colors.blue,size: 40,),
-          onPressed: () {
-            Navigator.pop(context);
-          },
-        ),
-      ),
       backgroundColor: Colors.white,
         body:SingleChildScrollView(
           child: Center(
@@ -32,7 +23,7 @@ class _LoginScreenState extends State<LoginScreen> {
               mainAxisAlignment: MainAxisAlignment.center,
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                SizedBox(height: 20),
+                SizedBox(height: 150),
                 Center(
                   child: Text(
                     'Login',

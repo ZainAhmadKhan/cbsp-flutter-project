@@ -65,6 +65,7 @@ class _LessonsState extends State<Lessons> {
   Widget build(BuildContext context) {
     return Column(
       children: [
+        SizedBox(height: 20,),
         Expanded(
           child: ListView.builder(
             itemCount: buttons.length,

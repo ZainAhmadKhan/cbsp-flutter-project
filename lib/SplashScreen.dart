@@ -1,4 +1,5 @@
-import 'package:cbsp_flutter_app/sign_login_screens/IntroScreen.dart';
+
+import 'package:cbsp_flutter_app/IntroScreen.dart';
 import 'package:flutter/material.dart';
 import 'dart:async'; 
 

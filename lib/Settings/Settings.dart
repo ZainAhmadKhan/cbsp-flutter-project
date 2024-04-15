@@ -1,8 +1,8 @@
+import 'package:cbsp_flutter_app/LoginScreen/Login.dart';
 import 'package:cbsp_flutter_app/Settings/AboutScreen.dart';
 import 'package:cbsp_flutter_app/Settings/GeneralScreen.dart';
 import 'package:cbsp_flutter_app/Settings/NotificationScreen.dart';
 import 'package:cbsp_flutter_app/Settings/TermsAndConditionScreen.dart';
-import 'package:cbsp_flutter_app/sign_login_screens/Login.dart';
 import 'package:flutter/material.dart';
 
 class Settings extends StatefulWidget {
