@@ -26,6 +26,31 @@ class _ProfileSettingScreenState extends State<ProfileSettingScreen> {
           ],
         ),
       ),
+      body: ListView(
+        padding: EdgeInsets.all(20),
+        children: [
+          Center(
+            child: CircleAvatar(
+              radius: 50,
+              backgroundImage: AssetImage('assets/person.png'), // Replace with your image path
+            ),
+          ),
+          SizedBox(height: 20),
+          Center(
+            child: Text(
+              'John Doe', 
+              style: TextStyle(fontSize: 18,fontWeight: FontWeight.bold),
+            ),
+          ),
+          SizedBox(height: 10),
+          Center(
+            child: Text(
+              'Software Engineer', // Replace with the user's about
+              style: TextStyle(fontSize: 18),
+            ),
+          ),
+        ]
+    )
     );
   }
 }

@@ -2,6 +2,7 @@ import 'package:cbsp_flutter_app/Settings/AboutScreen.dart';
 import 'package:cbsp_flutter_app/Settings/GeneralScreen.dart';
 import 'package:cbsp_flutter_app/Settings/NotificationScreen.dart';
 import 'package:cbsp_flutter_app/Settings/TermsAndConditionScreen.dart';
+import 'package:cbsp_flutter_app/sign_login_screens/Login.dart';
 import 'package:flutter/material.dart';
 
 class Settings extends StatefulWidget {
@@ -49,6 +50,11 @@ class _SettingsState extends State<Settings> {
                     'Zain Ahmad',
                     style: TextStyle(fontSize: 20.0),
                   ),
+                  SizedBox(width: 120.0),
+                  Text(
+                    '>',
+                    style: TextStyle(fontSize: 20.0),
+                  ),
                 ],
               ),
             ),
@@ -77,7 +83,10 @@ class _SettingsState extends State<Settings> {
             // Logout Button
             ElevatedButton.icon(
               onPressed: () {
-                // Logout functionality
+                Navigator.push(
+            context,
+            MaterialPageRoute(builder: (context) => LoginScreen()),
+          );
               },
               icon: Icon(Icons.logout),
               label: Text('Logout'),

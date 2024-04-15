@@ -1,5 +1,3 @@
-import 'package:cbsp_flutter_app/Contacts_Screen/Contacts.dart';
-import 'package:cbsp_flutter_app/Contacts_Screen/UserProfile.dart';
 import 'package:cbsp_flutter_app/Dashboard/Dashboard.dart';
 import 'package:cbsp_flutter_app/sign_login_screens/SplashScreen.dart';
 import 'package:flutter/material.dart';
@@ -21,8 +19,8 @@ class MyApp extends StatelessWidget {
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.blue),
         useMaterial3: true,
       ),
-      // home: Dashboard(),
-      home: SplashScreen(),
+      home: Dashboard(),
+      // home: SplashScreen(),
       debugShowCheckedModeBanner: false,
     );
   }
