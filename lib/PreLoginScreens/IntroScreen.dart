@@ -1,6 +1,9 @@
+import 'package:cbsp_flutter_app/DBhandler/Dbhandler.dart';
 import 'package:cbsp_flutter_app/LoginScreen/Login.dart';
 import 'package:cbsp_flutter_app/SignInScreens/Signup.dart';
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
 
 class IntroScreen extends StatefulWidget {
   const IntroScreen({super.key});
@@ -10,6 +13,53 @@ class IntroScreen extends StatefulWidget {
 }
 
 class _IntroScreenState extends State<IntroScreen> {
+    @override
+void initState() {
+  super.initState();
+  _checkDatabaseConnection();
+}
+
+Future<void> _checkDatabaseConnection() async {
+  bool isConnected = await ApiHandler.checkConnection();
+
+  if (!isConnected) {
+    showDialog (
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text('Connection Error'),
+        content: Text('Failed to connect to the database.'),
+        actions: [
+          TextButton(
+            onPressed: () {
+              Navigator.pop(context); // Close the dialog
+              _checkDatabaseConnection(); // Retry the database connection
+            },
+            child: Text('Retry'),
+          ),
+        ],
+      ),
+    );
+  }
+  else
+  {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text('Connection Sucessful'),
+        content: Text('Connected to the database.'),
+        actions: [
+          TextButton(
+            onPressed: () {
+              Navigator.pop(context); // Close the dialog
+            },
+            child: Text('Done'),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -108,4 +158,5 @@ class _IntroScreenState extends State<IntroScreen> {
 
   }
 }
+
 

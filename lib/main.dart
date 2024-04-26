@@ -1,5 +1,5 @@
 import 'package:cbsp_flutter_app/Dashboard/Dashboard.dart';
-import 'package:cbsp_flutter_app/SplashScreen.dart';
+import 'package:cbsp_flutter_app/PreLoginScreens/SplashScreen.dart';
 
 import 'package:flutter/material.dart';
 
