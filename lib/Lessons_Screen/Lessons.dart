@@ -1,6 +1,5 @@
 import 'package:cbsp_flutter_app/CustomSigns/CustomSigns.dart';
 import 'package:flutter/material.dart';
-import 'dart:math';
 
 class Lessons extends StatefulWidget {
   const Lessons({Key? key}) : super(key: key);

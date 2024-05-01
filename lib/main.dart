@@ -20,8 +20,8 @@ class MyApp extends StatelessWidget {
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.blue),
         useMaterial3: true,
       ),
-      // home: Dashboard(),
-      home: SplashScreen(),
+      home: Dashboard(),
+      // home: SplashScreen(),
       debugShowCheckedModeBanner: false,
     );
   }
