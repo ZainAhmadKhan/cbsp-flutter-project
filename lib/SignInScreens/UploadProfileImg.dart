@@ -1,5 +1,9 @@
 import 'package:cbsp_flutter_app/CustomWidget/RoundedTextField.dart';
+<<<<<<< HEAD
 import 'package:cbsp_flutter_app/APIsHandler/UserAPI.dart';
+=======
+import 'package:cbsp_flutter_app/DBhandler/Dbhandler.dart';
+>>>>>>> 99fb12d (Commit 7)
 import 'package:flutter/material.dart';
 import 'package:cbsp_flutter_app/LoginScreen/Login.dart';
 import 'package:image_picker/image_picker.dart';
