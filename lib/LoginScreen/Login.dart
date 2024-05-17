@@ -1,9 +1,11 @@
 import 'package:cbsp_flutter_app/ButtonsAndVariables/Buttons.dart';
-import 'package:cbsp_flutter_app/DBhandler/Dbhandler.dart';
+import 'package:cbsp_flutter_app/APIsHandler/UserAPI.dart';
+import 'package:cbsp_flutter_app/Provider/UserIdProvider.dart';
 import 'package:flutter/material.dart';
 import 'package:cbsp_flutter_app/CustomWidget/RoundedTextField.dart';
 import 'package:cbsp_flutter_app/Dashboard/Dashboard.dart';
 import 'package:cbsp_flutter_app/SignInScreens/Signup.dart';
+import 'package:provider/provider.dart';
 
 
 class LoginScreen extends StatefulWidget {
@@ -77,14 +79,21 @@ class _LoginScreenState extends State<LoginScreen> {
                           return;
                         }
                         // Perform login request
-                        bool isLoggedIn = await ApiHandler.loginUser(email, password);
-                        if (isLoggedIn) {
-                          // Navigate to Dashboard on successful login
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(builder: (context) => Dashboard()),
-                          );
-                        } else {
+                        Map<String, dynamic> loginResult = await ApiHandler.loginUser(email, password);
+                        bool isLoggedIn = loginResult["success"];
+
+                       if (isLoggedIn) {
+                        int userId = loginResult["user_id"];
+
+                        WidgetsBinding.instance.addPostFrameCallback((_) {
+                          Provider.of<UserIdProvider>(context, listen: false).setUserId(userId);
+                        });
+
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(builder: (context) => Dashboard()),
+                        );
+                      } else {
                           // Display login failed message
                           ScaffoldMessenger.of(context).showSnackBar(SnackBar(
                             content: Text('Login failed. Please try again.'),

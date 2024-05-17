@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 
 class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
   final double height;
-  final bool showSearchIcon; // New property to control the visibility of the search icon
+  final bool showSearchIcon; 
   final VoidCallback onSearchPressed;
   final VoidCallback onSettingsPressed;
 

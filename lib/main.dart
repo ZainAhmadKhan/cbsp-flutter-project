@@ -1,12 +1,17 @@
 import 'package:cbsp_flutter_app/Dashboard/Dashboard.dart';
 import 'package:cbsp_flutter_app/PreLoginScreens/SplashScreen.dart';
-
+import 'package:cbsp_flutter_app/Provider/UserIdProvider.dart';
+import 'package:provider/provider.dart';
 import 'package:flutter/material.dart';
 
 void main() {
-  runApp(const MyApp());
+  runApp(
+    ChangeNotifierProvider(
+      create: (_) => UserIdProvider(),
+      child: MyApp(),
+    ),
+  );
 }
-
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
 
@@ -20,8 +25,8 @@ class MyApp extends StatelessWidget {
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.blue),
         useMaterial3: true,
       ),
-      home: Dashboard(),
-      // home: SplashScreen(),
+      // home: Dashboard(),
+      home: SplashScreen(),
       debugShowCheckedModeBanner: false,
     );
   }

@@ -5,9 +5,11 @@ import 'package:cbsp_flutter_app/Lessons_Screen/Lessons.dart';
 import 'package:cbsp_flutter_app/Settings/Settings.dart';
 import 'package:cbsp_flutter_app/CustomWidget/Appbar.dart';
 import 'package:cbsp_flutter_app/CustomWidget/TopNavigatorBar.dart';
+import 'package:cbsp_flutter_app/Provider/UserIdProvider.dart'; // Import your UserIdProvider
+import 'package:provider/provider.dart';
 
 class Dashboard extends StatefulWidget {
-  const Dashboard({Key? key});
+  const Dashboard({Key? key}) : super(key: key);
 
   @override
   State<Dashboard> createState() => _DashboardState();
@@ -15,15 +17,9 @@ class Dashboard extends StatefulWidget {
 
 class _DashboardState extends State<Dashboard> {
   late PageController _pageController;
-  int _selectedIndex = 0;
-
-  final List<Widget> _screens = [
-    Contacts(),
-    CallLogs(),
-    Lessons(),
-  ];
-
-  @override
+  int _selectedIndex = 1;
+   
+ @override
   void initState() {
     super.initState();
     _pageController = PageController(initialPage: _selectedIndex);
@@ -62,24 +58,28 @@ class _DashboardState extends State<Dashboard> {
         },
       ),
       body: Column(
-        children: [
-          TopNavigator(
-            selectedIndex: _selectedIndex,
-            onItemTapped: _onItemTapped,
+            children: [
+              TopNavigator(
+                selectedIndex: _selectedIndex,
+                onItemTapped: _onItemTapped,
+              ),
+              Expanded(
+                child: PageView(
+                  controller: _pageController,
+                  onPageChanged: (index) {
+                    setState(() {
+                      _selectedIndex = index;
+                    });
+                  },
+                 children: [
+                  Contacts(),
+                  CallLogs(),
+                  Lessons(),
+                ],
+                ),
+              ),
+            ],
           ),
-          Expanded(
-            child: PageView(
-              controller: _pageController,
-              onPageChanged: (index) {
-                setState(() {
-                  _selectedIndex = index;
-                });
-              },
-              children: _screens,
-            ),
-          ),
-        ],
-      ),
     );
   }
 }

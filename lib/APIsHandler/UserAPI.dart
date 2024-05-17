@@ -1,8 +1,9 @@
+import 'package:cbsp_flutter_app/CustomWidget/GlobalVariables.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'dart:io';
 class ApiHandler {
-  static const baseUrl = 'http://192.168.43.55:8000/user';
+  static const baseUrl = '$Url/user';
 
 static Future<bool> checkConnection() async {
   try {
@@ -20,31 +21,32 @@ static Future<bool> checkConnection() async {
   }
 }
 
-  static Future<bool> loginUser(String email, String password) async {
-    try {
-      final response = await http.post(
-        Uri.parse('$baseUrl/login'),
-        headers: <String, String>{
-          'Content-Type': 'application/json; charset=UTF-8',
-        },
-        body: jsonEncode(<String, String>{
-          'email': email,
-          'password': password,
-        }),
-      );
+  static Future<Map<String, dynamic>> loginUser(String email, String password) async {
+  try {
+    final response = await http.post(
+      Uri.parse('$baseUrl/login'),
+      headers: <String, String>{
+        'Content-Type': 'application/json; charset=UTF-8',
+      },
+      body: jsonEncode(<String, String>{
+        'email': email,
+        'password': password,
+      }),
+    );
 
-      if (response.statusCode == 200) {
-        // Successful login
-        return true;
-      } else {
-        // Login failed
-        return false;
-      }
-    } catch (e) {
-      // Exception occurred
-      return false;
+    if (response.statusCode == 200) {
+      // Successful login
+      Map<String, dynamic> data = jsonDecode(response.body);
+      return {"success": true, "user_id": data["user_id"]};
+    } else {
+      // Login failed
+      return {"success": false};
     }
+  } catch (e) {
+    // Exception occurred
+    return {"success": false};
   }
+}
 
 static Future<int?> signupUser(String fname, String lname, String email, String password, DateTime dateOfBirth, String disability, String bio, String accountStatus, int onlinestatus, DateTime registrationdate) async {
   try {
