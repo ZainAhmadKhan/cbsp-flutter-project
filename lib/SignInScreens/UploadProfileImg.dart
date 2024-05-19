@@ -1,9 +1,5 @@
 import 'package:cbsp_flutter_app/CustomWidget/RoundedTextField.dart';
-<<<<<<< HEAD
 import 'package:cbsp_flutter_app/APIsHandler/UserAPI.dart';
-=======
-import 'package:cbsp_flutter_app/DBhandler/Dbhandler.dart';
->>>>>>> 99fb12d (Commit 7)
 import 'package:flutter/material.dart';
 import 'package:cbsp_flutter_app/LoginScreen/Login.dart';
 import 'package:image_picker/image_picker.dart';
@@ -107,7 +103,7 @@ class _UploadProfileImageState extends State<UploadProfileImage> {
             SizedBox(height: 50),
             ElevatedButton(
               onPressed: () async {
-              int? userId = await ApiHandler.signupUser(
+              int? userId = await UserApiHandler.signupUser(
                 widget.fname,
                 widget.lname,
                 widget.email,
@@ -121,7 +117,7 @@ class _UploadProfileImageState extends State<UploadProfileImage> {
               );
 
                 if (userId != null) {
-                  bool uploadSuccess = await ApiHandler.uploadProfilePicture(userId, _selectedImage!);
+                  bool uploadSuccess = await UserApiHandler.uploadProfilePicture(userId, _selectedImage!);
                   if (uploadSuccess) {
                     // Profile picture uploaded successfully
                     Navigator.push(

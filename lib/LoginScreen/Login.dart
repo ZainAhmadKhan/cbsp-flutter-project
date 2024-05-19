@@ -79,7 +79,7 @@ class _LoginScreenState extends State<LoginScreen> {
                           return;
                         }
                         // Perform login request
-                        Map<String, dynamic> loginResult = await ApiHandler.loginUser(email, password);
+                        Map<String, dynamic> loginResult = await UserApiHandler.loginUser(email, password);
                         bool isLoggedIn = loginResult["success"];
 
                        if (isLoggedIn) {

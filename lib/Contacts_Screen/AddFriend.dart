@@ -123,10 +123,10 @@ class _AddFriendState extends State<AddFriend> {
                   trailing: IconButton(
                     icon: Icon(Icons.group_add),
                     onPressed: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(builder: (context) => UserProfile()),
-                      );
+                      // Navigator.push(
+                      //   context,
+                      //   MaterialPageRoute(builder: (context) => UserProfile()),
+                      // );
                     },
                   ),
                 );

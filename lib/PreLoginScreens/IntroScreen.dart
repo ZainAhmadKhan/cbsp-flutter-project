@@ -18,7 +18,7 @@ void initState() {
 }
 
 Future<void> _checkDatabaseConnection() async {
-  bool isConnected = await ApiHandler.checkConnection();
+  bool isConnected = await UserApiHandler.checkConnection();
 
   if (!isConnected) {
     showDialog (

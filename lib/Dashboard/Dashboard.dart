@@ -5,8 +5,6 @@ import 'package:cbsp_flutter_app/Lessons_Screen/Lessons.dart';
 import 'package:cbsp_flutter_app/Settings/Settings.dart';
 import 'package:cbsp_flutter_app/CustomWidget/Appbar.dart';
 import 'package:cbsp_flutter_app/CustomWidget/TopNavigatorBar.dart';
-import 'package:cbsp_flutter_app/Provider/UserIdProvider.dart'; // Import your UserIdProvider
-import 'package:provider/provider.dart';
 
 class Dashboard extends StatefulWidget {
   const Dashboard({Key? key}) : super(key: key);
