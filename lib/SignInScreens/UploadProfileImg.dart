@@ -63,7 +63,7 @@ class _UploadProfileImageState extends State<UploadProfileImage> {
             Text(
               'Upload Profile Image',
               style: TextStyle(
-                fontSize: 50,
+                fontSize: 30,
                 color: Colors.blue,
                 fontWeight: FontWeight.bold,
               ),

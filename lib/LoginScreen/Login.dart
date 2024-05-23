@@ -83,7 +83,7 @@ class _LoginScreenState extends State<LoginScreen> {
                         bool isLoggedIn = loginResult["success"];
 
                        if (isLoggedIn) {
-                        int userId = loginResult["user_id"];
+                        int userId = loginResult["Id"];
 
                         WidgetsBinding.instance.addPostFrameCallback((_) {
                           Provider.of<UserIdProvider>(context, listen: false).setUserId(userId);

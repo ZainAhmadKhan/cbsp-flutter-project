@@ -1,153 +1,145 @@
-import 'package:cbsp_flutter_app/Contacts_Screen/AddFriend.dart';
-import 'package:cbsp_flutter_app/Settings/Settings.dart';
+import 'package:cbsp_flutter_app/APIsHandler/ContactsAPI.dart';
+import 'package:cbsp_flutter_app/APIsHandler/UserAPI.dart';
+import 'package:cbsp_flutter_app/CustomWidget/GlobalVariables.dart';
+import 'package:cbsp_flutter_app/Dashboard/Search.dart';
+import 'package:cbsp_flutter_app/Provider/UserIdProvider.dart';
 import 'package:flutter/material.dart';
+import 'package:cbsp_flutter_app/Settings/Settings.dart';
+import 'package:provider/provider.dart';
 
 class ShowAllContacts extends StatefulWidget {
-  const ShowAllContacts({Key? key}) : super(key: key);
+  final int userId;
+
+  const ShowAllContacts({Key? key, required this.userId}) : super(key: key);
 
   @override
   State<ShowAllContacts> createState() => _ShowAllContactsState();
 }
 
 class _ShowAllContactsState extends State<ShowAllContacts> {
-  final List<UserHistory> userhistory = [
-  UserHistory(
-    name: "John Doe",
-    about: "Software Engineer",
-    isOnline: true,
-    lastSeen: "Online",
-  ),
-  UserHistory(
-    name: "Jane Smith",
-    about: "Graphic Designer",
-    isOnline: false,
-    lastSeen: "7 min ago",
-  ),
-  UserHistory(
-    name: "Alice Johnson",
-    about: "Web Developer",
-    isOnline: true,
-    lastSeen: "4pm",
-  ),
-  UserHistory(
-    name: "Bob Brown",
-    about: "Data Scientist",
-    isOnline: false,
-    lastSeen: "2am",
-  ),
-  UserHistory(
-    name: "Eve Taylor",
-    about: "UI/UX Designer",
-    isOnline: true,
-    lastSeen: "Online",
-  ),
-  UserHistory(
-    name: "Mike Thompson",
-    about: "Product Manager",
-    isOnline: false,
-    lastSeen: "3 hours ago",
-  ),
-  UserHistory(
-    name: "Sara Johnson",
-    about: "Marketing Specialist",
-    isOnline: false,
-    lastSeen: "Yesterday",
-  ),
-  UserHistory(
-    name: "Alex Williams",
-    about: "Backend Developer",
-    isOnline: true,
-    lastSeen: "Online",
-  ),
-  UserHistory(
-    name: "Emily Brown",
-    about: "Frontend Developer",
-    isOnline: false,
-    lastSeen: "1 week ago",
-  ),
-  UserHistory(
-    name: "Ryan Miller",
-    about: "Systems Analyst",
-    isOnline: false,
-    lastSeen: "2 days ago",
-  ),
-];
+  List<User> users = [];
+  List<UserContact> contacts = []; 
+  List<User> filteredUsers = [];
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchUsers();
+  }
+
+  Future<void> _fetchUsers() async {
+    try {
+      final fetchedUsers = await UserApiHandler.fetchAllUsers();
+      setState(() {
+        users = fetchedUsers;
+      });
+      await _fetchContacts(widget.userId);
+      _filterUsers();
+    } catch (e) {
+      _showErrorMessage("Failed to load users");
+    }
+  }
+  Future<void> _fetchContacts(int userid) async {
+    try {
+      final fetchedContacts = await ContactApiHandler.getUserContacts(userid);
+      setState(() {
+        contacts = fetchedContacts;
+      });
+    } catch (e) {
+      _showErrorMessage("No Contacts Load Error!");
+    }
+  }
+  
+  void _filterUsers() {
+    final userIdProvider = Provider.of<UserIdProvider>(context, listen: false);
+    int uid = userIdProvider.userId;
+    // int uid=3;
+  setState(() {
+    filteredUsers = users.where((user) {
+      return !contacts.any((contact) => contact.profilePicture == user.profilePicture) &&
+          user.id != uid;
+    }).toList();
+  });
+}
+
+  void _showErrorMessage(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        duration: Duration(seconds: 2),
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: CustomAppBar2(
-        onAddFriendPressed: () {
+        onSearchPressed: () {
           Navigator.push(
             context,
-            MaterialPageRoute(builder: (context) => AddFriend()),
+            MaterialPageRoute(builder: (context) => SearchScreen()),
           );
         },
-        onSearchPressed: () {
-          // Add search functionality
-        },
         onSettingsPressed: () {
+          final userIdProvider = Provider.of<UserIdProvider>(context, listen: false);
+          int uid = userIdProvider.userId;
           Navigator.push(
             context,
-            MaterialPageRoute(builder: (context) => Settings()),
+            MaterialPageRoute(builder: (context) => Settings(userId: uid)),
           );
         },
       ),
       body: SingleChildScrollView(
-        child: Center(
-          child: Column(
-            children: [
-              ListView.builder(
+        child: Column(
+          children: [
+            Container(
+              height: MediaQuery.of(context).size.height * 0.8,
+              child: ListView.builder(
                 shrinkWrap: true,
-                itemCount: userhistory.length,
+                itemCount: filteredUsers.length,
                 itemBuilder: (context, index) {
+                  final user = filteredUsers[index];
+                  String imageUrl = '$Url/profile_pictures/';
+                  String imageName = user.profilePicture;
+                  String profileImage = imageUrl + imageName;
                   return ListTile(
                     leading: CircleAvatar(
-                      backgroundImage: AssetImage('assets/person.png'), // Dummy image
-                    ),
-                    title: Text(userhistory[index].name),
-                    subtitle: Text(userhistory[index].about),
+                          backgroundImage: NetworkImage(profileImage), 
+                        ),
+                    title: Text('${user.fname} ${user.lname}'),
+                    subtitle: Text(user.bioStatus!),
                     trailing: Row(
                       mainAxisSize: MainAxisSize.min,
-                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Column(
                           crossAxisAlignment: CrossAxisAlignment.end,
                           children: [
-                            Text(
-                              userhistory[index].lastSeen,
-                              style: TextStyle(
-                                color: userhistory[index].isOnline ? Colors.green : Colors.black, fontSize: 12
-                              ),
+                            SizedBox(height: 20),
+                            CircleAvatar(
+                              radius: 5,
+                              backgroundColor: user.onlineStatus == 1 ? Colors.green : Colors.grey,
                             ),
-                            SizedBox(height: 5), // Adjust spacing as needed
-                            Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Icon(
-                                  Icons.videocam,
-                                  color: Colors.grey,
-                                ),
-                                SizedBox(width: 5),
-                                CircleAvatar(
-                                  radius: 5,
-                                  backgroundColor: userhistory[index].isOnline ? Colors.green : Colors.grey,
-                                ),
-                              ],
-                            ),
+                            SizedBox(height: 10),
                           ],
                         ),
-                        SizedBox(width: 10), // Adjust spacing as needed
+                        SizedBox(width: 10),
+                       IconButton(
+                          icon: Icon(Icons.person_add),
+                          onPressed: () {
+                            ContactApiHandler.addNewContact(3, user.id, 0);
+                            initState(); 
+                          },
+                        ),
                       ],
                     ),
                   );
                 },
               ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
-
     );
   }
 }
@@ -156,14 +148,12 @@ class CustomAppBar2 extends StatelessWidget implements PreferredSizeWidget {
   final double height;
   final VoidCallback onSearchPressed;
   final VoidCallback onSettingsPressed;
-  final VoidCallback onAddFriendPressed;
 
   const CustomAppBar2({
     Key? key,
     this.height = kToolbarHeight,
     required this.onSearchPressed,
     required this.onSettingsPressed,
-    required this.onAddFriendPressed,
   }) : super(key: key);
 
   @override
@@ -173,7 +163,7 @@ class CustomAppBar2 extends StatelessWidget implements PreferredSizeWidget {
       title: const Row(
         children: [
           Text(
-            'Select contact',
+            'Add Contacts',
             style: TextStyle(
               fontSize: 18,
               color: Colors.black,
@@ -183,13 +173,6 @@ class CustomAppBar2 extends StatelessWidget implements PreferredSizeWidget {
         ],
       ),
       actions: [
-        IconButton(
-          onPressed: onAddFriendPressed,
-          icon: Icon(
-            Icons.group_add_rounded,
-            color: Colors.black,
-          ),
-        ),
         IconButton(
           onPressed: onSearchPressed,
           icon: Icon(
@@ -210,18 +193,4 @@ class CustomAppBar2 extends StatelessWidget implements PreferredSizeWidget {
 
   @override
   Size get preferredSize => Size.fromHeight(height);
-}
-
-class UserHistory {
-  final String name;
-  final String about;
-  final bool isOnline;
-  final String lastSeen;
-
-  UserHistory({
-    required this.name,
-    required this.about,
-    required this.isOnline,
-    required this.lastSeen,
-  });
 }

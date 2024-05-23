@@ -1,6 +1,7 @@
 import 'package:cbsp_flutter_app/APIsHandler/ContactsAPI.dart';
 import 'package:cbsp_flutter_app/Contacts_Screen/ShowAllContacts.dart';
 import 'package:cbsp_flutter_app/Contacts_Screen/UserProfile.dart';
+import 'package:cbsp_flutter_app/CustomWidget/GlobalVariables.dart';
 import 'package:cbsp_flutter_app/VideoCall/VideoCallScreen.dart';
 import 'package:flutter/material.dart';
 import 'package:cbsp_flutter_app/Provider/UserIdProvider.dart'; 
@@ -18,15 +19,26 @@ class _ContactsState extends State<Contacts> {
   Set<int> pinnedContacts = {};
   Set<int> mutedContacts = {};
   Set<int> blockedContacts = {};
+  // bool _isLoading = true;
  
   @override
   void initState() {
     super.initState();
     final userIdProvider = Provider.of<UserIdProvider>(context, listen: false);
     int uid = userIdProvider.userId;
+    // int uid=3;
+    // _startLoading();
     _loadPinnedMutedAndBlockedContacts();
     _fetchContacts(uid);
   }
+
+  // void _startLoading() async {
+  //   await Future.delayed(Duration(seconds: 3));
+  //   setState(() {
+  //     _isLoading = false;
+  //   });
+  // }
+
 
   Future<void> _fetchContacts(int userid) async {
     try {
@@ -174,7 +186,13 @@ class _ContactsState extends State<Contacts> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
-      body: SingleChildScrollView(
+      body: 
+      // _isLoading
+      //     ? Center(
+      //         child: CircularProgressIndicator(),
+      //       )
+      //     : 
+          SingleChildScrollView(
         child: Center(
           child: Column(
             children: [
@@ -185,8 +203,8 @@ class _ContactsState extends State<Contacts> {
                   itemCount: contacts.length,
                   itemBuilder: (context, index) {
                     final contact = contacts[index];
-                     final userId = getUserIdFromProfilePicture(contact.profilePicture);
-                    String imageUrl = 'http://192.168.43.55:8000/profile_pictures/';
+                    final userId = getUserIdFromProfilePicture(contact.profilePicture);
+                    String imageUrl = '$Url/profile_pictures/';
                     String imageName = contact.profilePicture;
                     String profileImage = imageUrl + imageName;
                     bool isPinned = pinnedContacts.contains(getUserIdFromProfilePicture(contact.profilePicture));
@@ -245,16 +263,20 @@ class _ContactsState extends State<Contacts> {
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () {
+          final userIdProvider = Provider.of<UserIdProvider>(context, listen: false);
+          int uid = userIdProvider.userId;
+          // int uid=3;
+          // print("Floating Uid $uid");
           Navigator.push(
             context,
-            MaterialPageRoute(builder: (context) => ShowAllContacts()),
+            MaterialPageRoute(builder: (context) => ShowAllContacts(userId: uid)),
           );
         },
         backgroundColor: Colors.blue,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(10.0),
         ),
-        child: Icon(Icons.videocam),
+        child: Icon(Icons.add),
       ),
     );
   }

@@ -1,4 +1,11 @@
+import 'package:cbsp_flutter_app/APIsHandler/ParticipantAPI.dart';
+import 'package:cbsp_flutter_app/Contacts_Screen/UserProfile.dart';
+import 'package:cbsp_flutter_app/CustomWidget/GlobalVariables.dart';
+import 'package:cbsp_flutter_app/VideoCall/VideoCallScreen.dart';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+
+import '../Provider/UserIdProvider.dart';
 
 class CallLogs extends StatefulWidget {
   const CallLogs({super.key});
@@ -8,177 +15,127 @@ class CallLogs extends StatefulWidget {
 }
 
 class _CallLogsState extends State<CallLogs> {
-  final List<CallHistory> callHistory = [
-  CallHistory(
-    name: "John Doe",
-    isOnline: true,
-    type: "Incoming",
-    date: "March 14,",
-    time: "10:10 AM",
-  ),
-  CallHistory(
-    name: "Jane Smith",
-    isOnline: false,
-    type: "Outgoing",
-    date: "April 5,",
-    time: "11:30 AM",
-  ),
-  CallHistory(
-    name: "Alice Johnson",
-    isOnline: true,
-    type: "Missed",
-    date: "May 21,",
-    time: "1:45 PM",
-  ),
-  CallHistory(
-    name: "Bob Brown",
-    isOnline: false,
-    type: "Incoming",
-    date: "June 9,",
-    time: "3:20 PM",
-  ),
-  CallHistory(
-    name: "Eve Taylor",
-    isOnline: true,
-    type: "Outgoing",
-    date: "July 17,",
-    time: "5:00 PM",
-  ),
-  CallHistory(
-    name: "Mike Thompson",
-    isOnline: false,
-    type: "Missed",
-    date: "August 3,",
-    time: "6:25 PM",
-  ),
-  CallHistory(
-    name: "Sara Johnson",
-    isOnline: false,
-    type: "Incoming",
-    date: "September 12,",
-    time: "7:40 PM",
-  ),
-  CallHistory(
-    name: "Alex Williams",
-    isOnline: true,
-    type: "Outgoing",
-    date: "October 28,",
-    time: "9:15 PM",
-  ),
-  CallHistory(
-    name: "Emily Brown",
-    isOnline: false,
-    type: "Missed",
-    date: "November 9,",
-    time: "11:05 PM",
-  ),
-  CallHistory(
-    name: "Ryan Miller",
-    isOnline: false,
-    type: "Incoming",
-    date: "December 20,",
-    time: "12:30 AM",
-  ),
-];
+ List<UserCallDetails> allCallLogs = [];
+
+ @override
+  void initState() {
+    super.initState();
+    final userIdProvider = Provider.of<UserIdProvider>(context, listen: false);
+    int uid = userIdProvider.userId;
+    _fetchUserCallLogs(3);
+  }
+
+  Future<void> _fetchUserCallLogs(int userId) async {
+    try {
+      final userCalls = await ParticipantsApiHandler.fetchAllUserCalls(userId);
+      setState(() {
+        allCallLogs = userCalls;
+      });
+    } catch (e) {
+      _showErrorMessage("Failed to fetch user calls");
+      print('Error fetching user calls: $e');
+    }
+  }
+
+  void _showErrorMessage(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        duration: Duration(seconds: 2),
+      ),
+    );
+  }
 
  @override
   Widget build(BuildContext context) {
+    String imageUrl = '$Url/profile_pictures/';
     return Scaffold(
       body: SingleChildScrollView(
         child: Center(
           child: Column(
             children: [
-              ListView.builder(
-              shrinkWrap: true,
-              itemCount: callHistory.length,
-              itemBuilder: (context, index) {
-                IconData iconData;
-                Color iconColor = Colors.black;
+              SizedBox(height: 10),
+              Container(
+                height: MediaQuery.of(context).size.height * 0.8,
+                child: ListView.builder(
+                  shrinkWrap: true,
+                  physics: NeverScrollableScrollPhysics(),
+                  itemCount: allCallLogs.length,
+                  itemBuilder: (context, index) {
+                    IconData iconData;
+                    Color iconColor = Colors.black;
 
-                switch (callHistory[index].type) {
-                  case 'Incoming':
-                    iconData = Icons.call_received;
-                    iconColor = Colors.green;
-                    break;
-                  case 'Outgoing':
-                    iconData = Icons.call_made;
-                    iconColor = Colors.green;
-                    break;
-                  case 'Missed':
-                    iconData = Icons.call_missed;
-                    iconColor = Colors.red;
-                    break;
-                  default:
-                    iconData = Icons.call;
-                    break;
-                }
+                    switch (allCallLogs[index].isCaller==1) {
+                      case true:
+                        iconData = Icons.call_made;
+                        iconColor = Colors.green;
+                        break;
+                      case false:
+                        iconData = Icons.call_received;
+                        iconColor = Colors.green;
+                        break;
+                      default:
+                        iconData = Icons.call;
+                        break;
+                    }
 
-                return ListTile(
-                  leading: CircleAvatar(
-                    backgroundImage: AssetImage('assets/person.png'), // Dummy image
-                  ),
-                  title: Text(callHistory[index].name),
-                  subtitle: Row(
-                    children: [
-                      Icon(
-                        iconData,
-                        color: iconColor,
-                        size: 16,
+                    String CallerImageUrl = imageUrl + allCallLogs[index].profilePicture;
+
+                    return ListTile(
+                      leading: CircleAvatar(
+                        backgroundImage: NetworkImage(CallerImageUrl), 
                       ),
-                      SizedBox(width: 5),
-                      Text(callHistory[index].date + " " + callHistory[index].time),
-                    ],
-                  ),
-                  trailing: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.end,
+                      title: Text('${allCallLogs[index].fname} ${allCallLogs[index].lname}'),
+                      subtitle: Row(
                         children: [
-                          Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Icon(
-                                Icons.videocam,
-                                color: Colors.grey,
-                              ),
-                              SizedBox(width: 5),
-                              CircleAvatar(
-                                radius: 5,
-                                backgroundColor: callHistory[index].isOnline ? Colors.green : Colors.grey,
-                              ),
-                            ],
+                          Icon(
+                            iconData,
+                            color: iconColor,
+                            size: 20,
+                          ),
+                          SizedBox(width: 5),
+                          Expanded(
+                            child: Text('${allCallLogs[index].endTime}'),
                           ),
                         ],
                       ),
-                      SizedBox(width: 10), // Adjust spacing as needed
-                    ],
-                  ),
-                );
-              },
-            ),
+                      trailing: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          SizedBox(width: 40),
+                          CircleAvatar(
+                            radius: 5,
+                            backgroundColor: allCallLogs[index].onlineStatus == 1 ? Colors.green : Colors.grey,
+                          ),
+                          SizedBox(width: 10),
+                          GestureDetector(
+                            onTap: () {
+                              final userIdProvider = Provider.of<UserIdProvider>(context, listen: false);
+                              int uid = userIdProvider.userId;
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => VideoCallScreen(userId: uid),
+                                ), // Navigate to VideoCall screen
+                              );
+                            },
+                            child: Icon(
+                              Icons.videocam,
+                              color: Colors.grey,
+                              size: 32,
+                            ),
+                          ),
+                        ],
+                      ),
+                    );
+                  },
+                ),
+              ),
             ],
           ),
-        ),
-      ),
-
+        )
+      )
     );
   }
 }
 
- class CallHistory {
-  final String name;
-  final bool isOnline;
-  final String type;
-  final String date;
-  final String time;
-
-  CallHistory({
-    required this.name,
-    required this.isOnline,
-    required this.type,
-    required this.date,
-    required this.time,
-  });
-}

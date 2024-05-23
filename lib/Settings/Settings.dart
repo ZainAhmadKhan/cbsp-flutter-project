@@ -1,20 +1,55 @@
+import 'package:cbsp_flutter_app/APIsHandler/UserAPI.dart';
+import 'package:cbsp_flutter_app/CustomWidget/GlobalVariables.dart';
 import 'package:cbsp_flutter_app/LoginScreen/Login.dart';
 import 'package:cbsp_flutter_app/Settings/AboutScreen.dart';
 import 'package:cbsp_flutter_app/Settings/GeneralScreen.dart';
 import 'package:cbsp_flutter_app/Settings/NotificationScreen.dart';
+import 'package:cbsp_flutter_app/Settings/ProfileSettingsScreen.dart';
 import 'package:cbsp_flutter_app/Settings/TermsAndConditionScreen.dart';
 import 'package:flutter/material.dart';
 
 class Settings extends StatefulWidget {
-  const Settings({super.key});
+   final int userId;
+
+  const Settings({Key? key, required this.userId}) : super(key: key);
 
   @override
   State<Settings> createState() => _SettingsState();
 }
 
 class _SettingsState extends State<Settings> {
+  UserDetails? user;
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchUserDetails(widget.userId);
+  }
+
+  Future<void> _fetchUserDetails(int userId) async {
+    try {
+      final userDetails = await UserApiHandler.fetchUserDetails(userId);
+      setState(() {
+        user = userDetails;
+      });
+    } catch (e) {
+      _showErrorMessage("Failed to fetch user details");
+    }
+  }
+
+  void _showErrorMessage(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        duration: Duration(seconds: 2),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
+    String imageUrl = '$Url/profile_pictures/';
+    String profileImage = user != null ? imageUrl + user!.profilePicture : 'assets/person.png';
     return Scaffold(
       appBar: AppBar(
         backgroundColor: Colors.grey[300],
@@ -36,24 +71,33 @@ class _SettingsState extends State<Settings> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            // Profile Section
             Container(
               padding: EdgeInsets.symmetric(vertical: 20.0),
               child: Row(
                 children: [
                   CircleAvatar(
-                    radius: 25.0,
-                    backgroundImage: AssetImage('assets/person.png'), // Replace with actual image URL
+                    radius: 50,
+                    backgroundImage: user != null
+                        ? NetworkImage(profileImage)
+                        : AssetImage('assets/person.png') as ImageProvider,
                   ),
                   SizedBox(width: 20.0),
                   Text(
-                    'Zain Ahmad',
-                    style: TextStyle(fontSize: 20.0),
+                    '${user?.fname} ${user?.lname}', // Display user's full name
+                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                   ),
-                  SizedBox(width: 120.0),
-                  Text(
-                    '>',
-                    style: TextStyle(fontSize: 20.0),
+                  SizedBox(width: 20.0),
+                  IconButton(
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (context) => ProfileSettingScreen(userId: widget.userId)),
+                      );
+                    },
+                    icon: Icon(
+                      Icons.arrow_forward,
+                      size: 20.0,
+                    ),
                   ),
                 ],
               ),

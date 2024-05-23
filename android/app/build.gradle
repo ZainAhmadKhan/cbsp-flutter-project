@@ -26,6 +26,7 @@ android {
     namespace "com.example.cbsp_flutter_app"
     compileSdkVersion flutter.compileSdkVersion
     ndkVersion flutter.ndkVersion
+    compileSdkVersion 34
 
     compileOptions {
         sourceCompatibility JavaVersion.VERSION_1_8
@@ -49,6 +50,8 @@ android {
         targetSdkVersion flutter.targetSdkVersion
         versionCode flutterVersionCode.toInteger()
         versionName flutterVersionName
+        compileSdkVersion 34
+        minSdkVersion 23
     }
 
     buildTypes {

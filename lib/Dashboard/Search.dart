@@ -1,47 +1,14 @@
 import 'package:cbsp_flutter_app/Contacts_Screen/UserProfile.dart';
 import 'package:flutter/material.dart';
 
-class UserHistory {
-  final String name;
-  final String about;
-  final bool isOnline;
-  final String lastSeen;
-
-  UserHistory({
-    required this.name,
-    required this.about,
-    required this.isOnline,
-    required this.lastSeen,
-  });
-}
-class AddFriend extends StatefulWidget {
-  const AddFriend({super.key});
+class SearchScreen extends StatefulWidget {
+  const SearchScreen({super.key});
 
   @override
-  State<AddFriend> createState() => _AddFriendState();
+  State<SearchScreen> createState() => _SearchScreenState();
 }
 
-class _AddFriendState extends State<AddFriend> {
-    final List<UserHistory> userhistory = [
-  UserHistory(
-    name: "John Doe",
-    about: "Software Engineer",
-    isOnline: true,
-    lastSeen: "Online",
-  ),
-  UserHistory(
-    name: "Jane Smith",
-    about: "Graphic Designer",
-    isOnline: false,
-    lastSeen: "7 min ago",
-  ),
-  UserHistory(
-    name: "Alice Johnson",
-    about: "Web Developer",
-    isOnline: true,
-    lastSeen: "4pm",
-  ),
-  ];
+class _SearchScreenState extends State<SearchScreen> {
 
   String selectedFilter = 'Username';
   @override
@@ -51,7 +18,7 @@ class _AddFriendState extends State<AddFriend> {
       title: const Row(
         children: [
           Text(
-            'Add Friend',
+            'Search Friends',
             style: TextStyle(
               fontSize: 25,
               color: Colors.black,
@@ -110,29 +77,29 @@ class _AddFriendState extends State<AddFriend> {
             ),
           ),
           SizedBox(height: 10),
-          Expanded(
-            child: ListView.builder(
-              itemCount: userhistory.length,
-              itemBuilder: (context, index) {
-                return ListTile(
-                  leading: CircleAvatar(
-                      backgroundImage: AssetImage('assets/person.png'), // Dummy image
-                    ),
-                  title: Text(userhistory[index].name),
-                  subtitle: Text(userhistory[index].about),
-                  trailing: IconButton(
-                    icon: Icon(Icons.group_add),
-                    onPressed: () {
-                      // Navigator.push(
-                      //   context,
-                      //   MaterialPageRoute(builder: (context) => UserProfile()),
-                      // );
-                    },
-                  ),
-                );
-              },
-            ),
-          ),
+          // Expanded(
+          //   child: ListView.builder(
+          //     itemCount: userhistory.length,
+          //     itemBuilder: (context, index) {
+          //       return ListTile(
+          //         leading: CircleAvatar(
+          //             backgroundImage: AssetImage('assets/person.png'), // Dummy image
+          //           ),
+          //         title: Text(userhistory[index].name),
+          //         subtitle: Text(userhistory[index].about),
+          //         trailing: IconButton(
+          //           icon: Icon(Icons.group_add),
+          //           onPressed: () {
+          //             // Navigator.push(
+          //             //   context,
+          //             //   MaterialPageRoute(builder: (context) => UserProfile()),
+          //             // );
+          //           },
+          //         ),
+          //       );
+          //     },
+          //   ),
+          // ),
         ],
       ),
     );

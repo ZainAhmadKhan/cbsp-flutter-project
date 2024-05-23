@@ -37,7 +37,7 @@ class UserApiHandler {
       if (response.statusCode == 200) {
         // Successful login
         Map<String, dynamic> data = jsonDecode(response.body);
-        return {"success": true, "user_id": data["user_id"]};
+        return {"success": true, "Id": data["Id"]};
       } else {
         // Login failed
         return {"success": false};
@@ -127,6 +127,23 @@ class UserApiHandler {
       throw Exception('Failed to load user details');
     }
   }
+
+  static Future<List<User>> fetchAllUsers() async {
+    final response = await http.get(Uri.parse('$baseUrl/all'));
+      
+    if (response.statusCode == 200) {
+      try {
+        final List<dynamic> jsonData = json.decode(response.body);
+        return jsonData.map((contactJson) => User.fromJson(contactJson)).toList();
+      } catch (e) {
+        print('Error parsing user data: $e'); 
+        throw Exception('Error parsing user data');
+      }
+    } else {
+      print('Failed to load user calls: ${response.statusCode}'); // Log status code
+      throw Exception('Failed to load user calls');
+    }
+  }
 }
 
 class UserDetails {
@@ -169,6 +186,52 @@ class UserDetails {
       bioStatus: json['bio_status'],
       registrationDate: DateTime.parse(json['registration_date']),
       onlineStatus: json['online_status'],
+    );
+  }
+}
+class User {
+  final int id;
+  final String? username;
+  final String? dateOfBirth;
+  final String profilePicture; 
+  final String? email;
+  final String? disabilityType; 
+  final String? fname;
+  final String? lname;
+  final String? accountStatus;
+  final String? bioStatus;
+  final String? registrationDate;
+  final int onlineStatus;
+
+  User({
+    required this.id,
+    this.username,
+    required this.dateOfBirth,
+    required this.profilePicture, 
+    this.email,
+    this.disabilityType, 
+    this.fname,
+    this.lname,
+    this.accountStatus,
+    this.bioStatus,
+    required this.registrationDate,
+    required this.onlineStatus,
+  });
+
+  factory User.fromJson(Map<String, dynamic> json) {
+    return User(
+      id: json['Id'],
+      username: json['Username'] as String?,
+      dateOfBirth: json['DateOfBirth'],
+      profilePicture: json['ProfilePicture'], 
+      email: json['Email'] as String?,
+      disabilityType: json['DisabilityType'] as String?, 
+      fname: json['Fname'] as String?,
+      lname: json['Lname'] as String?,
+      accountStatus: json['AccountStatus'] as String?,
+      bioStatus: json['BioStatus'] as String?,
+      registrationDate: json['RegistrationDate'], // Use the correct key from JSON
+      onlineStatus: json['OnlineStatus'] ?? 0, // Assuming onlineStatus defaults to 0 if null
     );
   }
 }

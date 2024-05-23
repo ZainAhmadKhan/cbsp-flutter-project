@@ -1,3 +1,5 @@
+import 'package:cbsp_flutter_app/Dashboard/Search.dart';
+import 'package:cbsp_flutter_app/Provider/UserIdProvider.dart';
 import 'package:flutter/material.dart';
 import 'package:cbsp_flutter_app/CallLogs_Screen/CallLogs.dart';
 import 'package:cbsp_flutter_app/Contacts_Screen/contacts.dart';
@@ -5,6 +7,7 @@ import 'package:cbsp_flutter_app/Lessons_Screen/Lessons.dart';
 import 'package:cbsp_flutter_app/Settings/Settings.dart';
 import 'package:cbsp_flutter_app/CustomWidget/Appbar.dart';
 import 'package:cbsp_flutter_app/CustomWidget/TopNavigatorBar.dart';
+import 'package:provider/provider.dart';
 
 class Dashboard extends StatefulWidget {
   const Dashboard({Key? key}) : super(key: key);
@@ -15,7 +18,7 @@ class Dashboard extends StatefulWidget {
 
 class _DashboardState extends State<Dashboard> {
   late PageController _pageController;
-  int _selectedIndex = 1;
+  int _selectedIndex = 0;
    
  @override
   void initState() {
@@ -46,12 +49,17 @@ class _DashboardState extends State<Dashboard> {
       appBar: CustomAppBar(
         showSearchIcon: _selectedIndex != 2,
         onSearchPressed: () {
-          // Add search functionality
-        },
-        onSettingsPressed: () {
           Navigator.push(
             context,
-            MaterialPageRoute(builder: (context) => Settings()),
+            MaterialPageRoute(builder: (context) => SearchScreen()),
+          );
+        },
+        onSettingsPressed: () {
+          final userIdProvider = Provider.of<UserIdProvider>(context, listen: false);
+          int uid = userIdProvider.userId;
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (context) => Settings(userId: uid)),
           );
         },
       ),

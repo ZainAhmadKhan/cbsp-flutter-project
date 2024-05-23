@@ -15,6 +15,32 @@ class ContactApiHandler {
       throw Exception('Failed to load contacts');
     }
   }
+
+  static Future<void> addNewContact(int userId, int contactId, int isBlocked) async {
+  final Map<String, dynamic> requestData = {
+    'user_id': userId,
+    'contact_id': contactId,
+    'is_blocked': isBlocked,
+  };
+
+  try {
+    final http.Response response = await http.post(
+      Uri.parse('$baseUrl/add'),
+      body: jsonEncode(requestData),
+      headers: <String, String>{
+        'Content-Type': 'application/json; charset=UTF-8',
+      },
+    );
+
+    if (response.statusCode == 200) {
+      print('User added as a contact successfully');
+    } else {
+      print('Failed to add user as a contact: ${response.statusCode}');
+    }
+  } catch (e) {
+    print('Error adding user as a contact: $e');
+  }
+}
 }
 class UserContact {
   final String fname;
