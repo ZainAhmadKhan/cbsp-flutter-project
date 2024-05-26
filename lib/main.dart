@@ -1,18 +1,26 @@
-import 'package:cbsp_flutter_app/Dashboard/Dashboard.dart';
-import 'package:cbsp_flutter_app/LoginScreen/Login.dart';
 import 'package:cbsp_flutter_app/PreLoginScreens/SplashScreen.dart';
+import 'package:cbsp_flutter_app/Provider/CheckCallStatusProvider.dart';
 import 'package:cbsp_flutter_app/Provider/UserIdProvider.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter/material.dart';
 
 void main() {
   runApp(
-    ChangeNotifierProvider(
-      create: (_) => UserIdProvider(),
+    MultiProvider(
+      providers: [
+        ChangeNotifierProvider(
+          create: (_) => checkCallAccepted(),
+        ),
+        ChangeNotifierProvider(
+          create: (_) => UserIdProvider(0),
+        ),
+        // Add other providers if necessary
+      ],
       child: MyApp(),
     ),
   );
 }
+
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
 

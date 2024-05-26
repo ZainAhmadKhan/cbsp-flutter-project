@@ -43,16 +43,22 @@ class ContactApiHandler {
 }
 }
 class UserContact {
+  final int id;
   final String fname;
   final String lname;
+  final String userName;
+  final String disabilityType;
   final String profilePicture;
   final String accountStatus;
   final String bioStatus;
   final int onlineStatus;
 
   UserContact({
+    required this.id,
     required this.fname,
     required this.lname,
+    required this.userName,
+    required this.disabilityType,
     required this.profilePicture,
     required this.accountStatus,
     required this.bioStatus,
@@ -61,8 +67,11 @@ class UserContact {
 
   factory UserContact.fromJson(Map<String, dynamic> json) {
     return UserContact(
+      id: json['user_id'],
       fname: json['fname'],
       lname: json['lname'],
+      userName: json['username'],
+      disabilityType: json['disability_type'],
       profilePicture: json['profile_picture'],
       accountStatus: json['account_status'],
       bioStatus: json['bio_status'],

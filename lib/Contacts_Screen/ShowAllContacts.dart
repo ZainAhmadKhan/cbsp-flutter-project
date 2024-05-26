@@ -6,6 +6,8 @@ import 'package:cbsp_flutter_app/Provider/UserIdProvider.dart';
 import 'package:flutter/material.dart';
 import 'package:cbsp_flutter_app/Settings/Settings.dart';
 import 'package:provider/provider.dart';
+import 'dart:convert';
+import 'package:http/http.dart' as http;
 
 class ShowAllContacts extends StatefulWidget {
   final int userId;
@@ -17,50 +19,14 @@ class ShowAllContacts extends StatefulWidget {
 }
 
 class _ShowAllContactsState extends State<ShowAllContacts> {
-  List<User> users = [];
-  List<UserContact> contacts = []; 
-  List<User> filteredUsers = [];
+  String selectedFilter = 'Username';
+  List<SearchResult> searchData = [];
+  TextEditingController searchController = TextEditingController();
 
   @override
   void initState() {
     super.initState();
-    _fetchUsers();
   }
-
-  Future<void> _fetchUsers() async {
-    try {
-      final fetchedUsers = await UserApiHandler.fetchAllUsers();
-      setState(() {
-        users = fetchedUsers;
-      });
-      await _fetchContacts(widget.userId);
-      _filterUsers();
-    } catch (e) {
-      _showErrorMessage("Failed to load users");
-    }
-  }
-  Future<void> _fetchContacts(int userid) async {
-    try {
-      final fetchedContacts = await ContactApiHandler.getUserContacts(userid);
-      setState(() {
-        contacts = fetchedContacts;
-      });
-    } catch (e) {
-      _showErrorMessage("No Contacts Load Error!");
-    }
-  }
-  
-  void _filterUsers() {
-    final userIdProvider = Provider.of<UserIdProvider>(context, listen: false);
-    int uid = userIdProvider.userId;
-    // int uid=3;
-  setState(() {
-    filteredUsers = users.where((user) {
-      return !contacts.any((contact) => contact.profilePicture == user.profilePicture) &&
-          user.id != uid;
-    }).toList();
-  });
-}
 
   void _showErrorMessage(String message) {
     ScaffoldMessenger.of(context).showSnackBar(
@@ -69,6 +35,40 @@ class _ShowAllContactsState extends State<ShowAllContacts> {
         duration: Duration(seconds: 2),
       ),
     );
+  }
+
+  Future<void> _searchByUsername(int id, String username) async {
+    try {
+      final fetchedUser = await UserApiHandler.searchByUsername(id, username);
+      setState(() {
+        searchData = fetchedUser;
+      });
+    } catch (e) {
+      _showErrorMessage("Failed to load search data");
+    }
+  }
+
+  Future<void> _searchByEmail(int id, String email) async {
+    try {
+      final fetchedUser = await UserApiHandler.searchByEmail(id, email);
+      setState(() {
+        searchData = fetchedUser;
+      });
+    } catch (e) {
+      _showErrorMessage("Failed to load search data");
+    }
+  }
+
+  void _performSearch() {
+    final userIdProvider = Provider.of<UserIdProvider>(context, listen: false);
+    int uid = userIdProvider.userId;
+    String query = searchController.text;
+
+    if (selectedFilter == 'Username') {
+      _searchByUsername(uid, query);
+    } else if (selectedFilter == 'Email') {
+      _searchByEmail(uid, query);
+    }
   }
 
   @override
@@ -93,22 +93,75 @@ class _ShowAllContactsState extends State<ShowAllContacts> {
       body: SingleChildScrollView(
         child: Column(
           children: [
+            SizedBox(height: 10),
+            Text("Search Users by Username or Email"),
+            SizedBox(height: 10),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Radio<String>(
+                  value: 'Username',
+                  groupValue: selectedFilter,
+                  onChanged: (value) {
+                    setState(() {
+                      selectedFilter = value!;
+                    });
+                  },
+                ),
+                Text('Username'),
+                SizedBox(width: 20),
+                Radio<String>(
+                  value: 'Email',
+                  groupValue: selectedFilter,
+                  onChanged: (value) {
+                    setState(() {
+                      selectedFilter = value!;
+                    });
+                  },
+                ),
+                Text('Email'),
+              ],
+            ),
+            SizedBox(height: 10),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20),
+              child: TextField(
+                controller: searchController,
+                decoration: InputDecoration(
+                  hintText: 'Search...',
+                  filled: true,
+                  fillColor: Colors.grey[200], // Background color
+                  suffixIcon: IconButton(
+                    icon: Icon(Icons.search, color: Colors.grey, size: 30), // Search icon color
+                    onPressed: _performSearch,
+                  ),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(40), // Border radius
+                    borderSide: BorderSide.none, // Remove border side
+                  ),
+                ),
+                onChanged: (value) {
+                  // Optionally trigger search on change if desired
+                },
+              ),
+            ),
+            SizedBox(height: 10),
             Container(
               height: MediaQuery.of(context).size.height * 0.8,
               child: ListView.builder(
                 shrinkWrap: true,
-                itemCount: filteredUsers.length,
+                itemCount: searchData.length,
                 itemBuilder: (context, index) {
-                  final user = filteredUsers[index];
+                  final user = searchData[index];
                   String imageUrl = '$Url/profile_pictures/';
                   String imageName = user.profilePicture;
                   String profileImage = imageUrl + imageName;
                   return ListTile(
                     leading: CircleAvatar(
-                          backgroundImage: NetworkImage(profileImage), 
-                        ),
+                      backgroundImage: NetworkImage(profileImage),
+                    ),
                     title: Text('${user.fname} ${user.lname}'),
-                    subtitle: Text(user.bioStatus!),
+                    subtitle: Text("@${user.username}", selectionColor: Colors.blue),
                     trailing: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
@@ -124,12 +177,21 @@ class _ShowAllContactsState extends State<ShowAllContacts> {
                           ],
                         ),
                         SizedBox(width: 10),
-                       IconButton(
-                          icon: Icon(Icons.person_add),
-                          onPressed: () {
-                            ContactApiHandler.addNewContact(3, user.id, 0);
-                            initState(); 
-                          },
+                        IconButton(
+                          icon: Icon(
+                            user.isFriend ? Icons.done_all : Icons.person_add,
+                            color: user.isFriend ? Colors.green : Colors.blue,
+                          ),
+                          onPressed: user.isFriend
+                              ? null
+                              : () {
+                                  final userIdProvider = Provider.of<UserIdProvider>(context, listen: false);
+                                  int uid = userIdProvider.userId;
+                                  ContactApiHandler.addNewContact(uid, user.userId, 0);
+                                  setState(() {
+                                    user.isFriend = true; // Update the local state
+                                  });
+                                },
                         ),
                       ],
                     ),
@@ -163,7 +225,7 @@ class CustomAppBar2 extends StatelessWidget implements PreferredSizeWidget {
       title: const Row(
         children: [
           Text(
-            'Add Contacts',
+            'Add Contact',
             style: TextStyle(
               fontSize: 18,
               color: Colors.black,
@@ -194,3 +256,4 @@ class CustomAppBar2 extends StatelessWidget implements PreferredSizeWidget {
   @override
   Size get preferredSize => Size.fromHeight(height);
 }
+

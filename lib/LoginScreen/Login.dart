@@ -1,6 +1,7 @@
 import 'package:cbsp_flutter_app/ButtonsAndVariables/Buttons.dart';
 import 'package:cbsp_flutter_app/APIsHandler/UserAPI.dart';
 import 'package:cbsp_flutter_app/Provider/UserIdProvider.dart';
+import 'package:cbsp_flutter_app/VideoCall/VideoCallScreen.dart';
 import 'package:flutter/material.dart';
 import 'package:cbsp_flutter_app/CustomWidget/RoundedTextField.dart';
 import 'package:cbsp_flutter_app/Dashboard/Dashboard.dart';
@@ -85,13 +86,12 @@ class _LoginScreenState extends State<LoginScreen> {
                        if (isLoggedIn) {
                         int userId = loginResult["Id"];
 
-                        WidgetsBinding.instance.addPostFrameCallback((_) {
-                          Provider.of<UserIdProvider>(context, listen: false).setUserId(userId);
-                        });
+                        Provider.of<UserIdProvider>(context, listen: false).setUserId(userId);
+                        
 
                         Navigator.push(
                           context,
-                          MaterialPageRoute(builder: (context) => Dashboard()),
+                          MaterialPageRoute(builder: (context) => VideoCallScreen()),
                         );
                       } else {
                           // Display login failed message

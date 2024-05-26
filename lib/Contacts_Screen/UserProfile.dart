@@ -190,12 +190,12 @@ class _UserProfileState extends State<UserProfile> {
                       SizedBox(width: 10),
                       GestureDetector(
                         onTap: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => VideoCallScreen(userId: widget.userId),
-                            ), // Navigate to VideoCall screen
-                          );
+                          // Navigator.push(
+                          //   context,
+                          //   MaterialPageRoute(
+                          //     builder: (context) => VideoCallScreen(userId: widget.userId),
+                          //   ), // Navigate to VideoCall screen
+                          // );
                         },
                         child: Icon(
                           Icons.videocam,

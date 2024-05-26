@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_webrtc/flutter_webrtc.dart';
+import 'package:speech_to_text/speech_to_text.dart' as stt;
 import '../services/signalling.service.dart';
 
 class CallScreen extends StatefulWidget {
@@ -38,6 +39,12 @@ class _CallScreenState extends State<CallScreen> {
   // media status
   bool isAudioOn = true, isVideoOn = true, isFrontCameraSelected = true;
 
+  // Speech to text
+  stt.SpeechToText _speech = stt.SpeechToText();
+  bool _isListening = false;
+  String _localTranscribedText = "";
+  String _remoteTranscribedText = "";
+
   @override
   void initState() {
     // initializing renderers
@@ -46,6 +53,12 @@ class _CallScreenState extends State<CallScreen> {
 
     // setup Peer Connection
     _setupPeerConnection();
+
+    // Listen for 'endCall' event to end the call
+    socket!.on('endCall', (data) {
+      _leaveCall();
+    });
+
     super.initState();
   }
 
@@ -91,6 +104,17 @@ class _CallScreenState extends State<CallScreen> {
     // set source for local video renderer
     _localRTCVideoRenderer.srcObject = _localStream;
     setState(() {});
+
+    // Listen for transcribed text from the remote peer
+    socket!.on("transcribedText", (data) {
+      String sender = data['sender'];
+      String text = data['text'];
+
+      // Handle the transcribed text
+      setState(() {
+        _remoteTranscribedText = text;
+      });
+    });
 
     // for Incoming call
     if (widget.offer != null) {
@@ -169,6 +193,10 @@ class _CallScreenState extends State<CallScreen> {
   }
 
   _leaveCall() {
+    socket!.emit('endCall', {
+      'callerId': widget.callerId,
+      'calleeId': widget.calleeId,
+    });
     Navigator.pop(context);
   }
 
@@ -205,13 +233,36 @@ class _CallScreenState extends State<CallScreen> {
     setState(() {});
   }
 
+  _startListening() async {
+    if (!_isListening) {
+      bool available = await _speech.initialize();
+      if (available) {
+        setState(() => _isListening = true);
+        _speech.listen(
+          onResult: (val) => setState(() {
+            _localTranscribedText = val.recognizedWords;
+            // Send transcribed text to the remote peer
+            socket!.emit('transcribedText', {
+              'text': _localTranscribedText,
+              'sender': widget.callerId,
+              'receiver': widget.calleeId,
+            });
+          }),
+        );
+      }
+    }
+  }
+
+  _stopListening() async {
+    if (_isListening) {
+      setState(() => _isListening = false);
+      await _speech.stop();
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Theme.of(context).colorScheme.background,
-      appBar: AppBar(
-        title: const Text("P2P Call App"),
-      ),
       body: SafeArea(
         child: Column(
           children: [
@@ -234,32 +285,73 @@ class _CallScreenState extends State<CallScreen> {
                           RTCVideoViewObjectFit.RTCVideoViewObjectFitCover,
                     ),
                   ),
+                ),
+                Positioned(
+                  top: 20,
+                  left: 20,
+                  child: Container(
+                    color: Colors.black54,
+                    padding: EdgeInsets.all(10),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'You: $_localTranscribedText',
+                          style: TextStyle(color: Colors.white),
+                        ),
+                        SizedBox(height: 10),
+                        Text(
+                          'Remote: $_remoteTranscribedText',
+                          style: TextStyle(color: Colors.white),
+                        ),
+                      ],
+                    ),
+                  ),
                 )
               ]),
             ),
-            Padding(
-              padding: const EdgeInsets.symmetric(vertical: 12),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceAround,
-                children: [
-                  IconButton(
-                    icon: Icon(isAudioOn ? Icons.mic : Icons.mic_off),
-                    onPressed: _toggleMic,
-                  ),
-                  IconButton(
-                    icon: const Icon(Icons.call_end),
-                    iconSize: 30,
-                    onPressed: _leaveCall,
-                  ),
-                  IconButton(
-                    icon: const Icon(Icons.cameraswitch),
-                    onPressed: _switchCamera,
-                  ),
-                  IconButton(
-                    icon: Icon(isVideoOn ? Icons.videocam : Icons.videocam_off),
-                    onPressed: _toggleCamera,
-                  ),
-                ],
+            ClipPath(
+              // clipper: BottomNavBarClipper(),
+              child: BottomAppBar(
+                height: 75,
+                color: Colors.blueGrey[900],
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                  children: [
+                    IconButton(
+                      icon: Icon(Icons.switch_camera,
+                          color: Colors.white, size: 30),
+                      onPressed: _switchCamera,
+                    ),
+                    IconButton(
+                      icon: Icon(isVideoOn
+                          ? Icons.videocam
+                          : Icons.videocam_off,
+                          color: Colors.white,
+                          size: 30),
+                      onPressed: _toggleCamera,
+                    ),
+                    IconButton(
+                      icon: Icon(isAudioOn ? Icons.mic : Icons.mic_off,
+                          color: Colors.white, size: 30),
+                      onPressed: _toggleMic,
+                    ),
+                    IconButton(
+                      icon: Icon(_isListening ? Icons.stop : Icons.mic,
+                          color: Colors.white, size: 30),
+                      onPressed: _isListening ? _stopListening : _startListening,
+                    ),
+                    CircleAvatar(
+                      backgroundColor: Colors.red,
+                      maxRadius: 23,
+                      child: IconButton(
+                        icon: Icon(Icons.call_end,
+                            color: Colors.white, size: 30),
+                        onPressed: _leaveCall,
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
           ],
@@ -274,6 +366,29 @@ class _CallScreenState extends State<CallScreen> {
     _remoteRTCVideoRenderer.dispose();
     _localStream?.dispose();
     _rtcPeerConnection?.dispose();
+    _speech.stop();
     super.dispose();
+  }
+}
+
+class BottomNavBarClipper extends CustomClipper<Path> {
+  @override
+  Path getClip(Size size) {
+    var path = Path();
+    double radius = 20.0;
+
+    path.moveTo(0, radius);
+    path.quadraticBezierTo(0, 0, radius, 0);
+    path.lineTo(size.width - radius, 0);
+    path.quadraticBezierTo(size.width, 0, size.width, radius);
+    path.lineTo(size.width, size.height);
+    path.lineTo(0, size.height);
+    path.close();
+    return path;
+  }
+
+  @override
+  bool shouldReclip(CustomClipper<Path> oldClipper) {
+    return false;
   }
 }

@@ -1,3 +1,5 @@
+import 'dart:math';
+
 import 'package:cbsp_flutter_app/CustomWidget/GlobalVariables.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
@@ -144,9 +146,43 @@ class UserApiHandler {
       throw Exception('Failed to load user calls');
     }
   }
+  static Future<List<SearchResult>> searchByUsername(int id, String username) async {
+    final response = await http.get(Uri.parse('$baseUrl/search-by-username?user_id=$id&search_username=$username'));
+      
+    if (response.statusCode == 200) {
+      try {
+        final Map<String, dynamic> jsonData = json.decode(response.body);
+        return [SearchResult.fromJson(jsonData)]; // Wrap the single object in a list
+      } catch (e) {
+        print('Error parsing search data: $e'); 
+        throw Exception('Error parsing search data');
+      }
+    } else {
+      print('Failed to search by username: ${response.statusCode}'); 
+      throw Exception('Failed to search by username');
+    }
+  }
+
+  static Future<List<SearchResult>> searchByEmail(int id, String email) async {
+    final response = await http.get(Uri.parse('$baseUrl/search-by-email?user_id=$id&search_email=$email'));
+      
+    if (response.statusCode == 200) {
+      try {
+        final Map<String, dynamic> jsonData = json.decode(response.body);
+        return [SearchResult.fromJson(jsonData)]; // Wrap the single object in a list
+      } catch (e) {
+        print('Error parsing search data: $e'); 
+        throw Exception('Error parsing search data');
+      }
+    } else {
+      print('Failed to search by email: ${response.statusCode}'); 
+      throw Exception('Failed to search by email');
+    }
+  }
 }
 
 class UserDetails {
+  final int id;
   final String fname;
   final String lname;
   final DateTime dateOfBirth;
@@ -160,6 +196,7 @@ class UserDetails {
   final int onlineStatus;
 
   UserDetails({
+    required this.id,
     required this.fname,
     required this.lname,
     required this.dateOfBirth,
@@ -175,6 +212,7 @@ class UserDetails {
 
   factory UserDetails.fromJson(Map<String, dynamic> json) {
     return UserDetails(
+      id: json['Id'],
       fname: json['fname'],
       lname: json['lname'],
       dateOfBirth: DateTime.parse(json['DateOfBirth']),
@@ -190,48 +228,79 @@ class UserDetails {
   }
 }
 class User {
+  final String username;
+  final String email;
   final int id;
-  final String? username;
-  final String? dateOfBirth;
-  final String profilePicture; 
-  final String? email;
-  final String? disabilityType; 
-  final String? fname;
-  final String? lname;
-  final String? accountStatus;
-  final String? bioStatus;
-  final String? registrationDate;
+  final String disabilityType;
+  final String profilePicture;
+  final String fname;
+  final String lname;
+  final String bioStatus;
   final int onlineStatus;
 
   User({
+    required this.username,
+    required this.email,
     required this.id,
-    this.username,
-    required this.dateOfBirth,
-    required this.profilePicture, 
-    this.email,
-    this.disabilityType, 
-    this.fname,
-    this.lname,
-    this.accountStatus,
-    this.bioStatus,
-    required this.registrationDate,
+    required this.disabilityType,
+    required this.profilePicture,
+    required this.fname,
+    required this.lname,
+    required this.bioStatus,
     required this.onlineStatus,
   });
 
   factory User.fromJson(Map<String, dynamic> json) {
     return User(
+      username: json['Username'],
+      email: json['Email'],
       id: json['Id'],
-      username: json['Username'] as String?,
-      dateOfBirth: json['DateOfBirth'],
-      profilePicture: json['ProfilePicture'], 
-      email: json['Email'] as String?,
-      disabilityType: json['DisabilityType'] as String?, 
-      fname: json['Fname'] as String?,
-      lname: json['Lname'] as String?,
-      accountStatus: json['AccountStatus'] as String?,
-      bioStatus: json['BioStatus'] as String?,
-      registrationDate: json['RegistrationDate'], // Use the correct key from JSON
-      onlineStatus: json['OnlineStatus'] ?? 0, // Assuming onlineStatus defaults to 0 if null
+      disabilityType: json['DisabilityType'],
+      profilePicture: json['ProfilePicture'],
+      fname: json['Fname'],
+      lname: json['Lname'],
+      bioStatus: json['BioStatus'],
+      onlineStatus: json['OnlineStatus'],
+    );
+  }
+}
+class SearchResult {
+  final int userId;
+  final String username;
+  final String fname;
+  final String lname;
+  final String disabilityType;
+  final String profilePicture;
+  final String accountStatus;
+  final String bioStatus;
+  final int onlineStatus;
+  bool isFriend;
+
+  SearchResult({
+    required this.userId,
+    required this.username,
+    required this.fname,
+    required this.lname,
+    required this.disabilityType,
+    required this.profilePicture,
+    required this.accountStatus,
+    required this.bioStatus,
+    required this.onlineStatus,
+    required this.isFriend,
+  });
+
+  factory SearchResult.fromJson(Map<String, dynamic> json) {
+    return SearchResult(
+      userId: json['user_id'],
+      username: json['username'],
+      fname: json['fname'],
+      lname: json['lname'],
+      disabilityType: json['disability_type'],
+      profilePicture: json['profile_picture'],
+      accountStatus: json['account_status'],
+      bioStatus: json['bio_status'],
+      onlineStatus: json['online_status'],
+      isFriend: json['is_friend'],
     );
   }
 }

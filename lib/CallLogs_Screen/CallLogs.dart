@@ -59,7 +59,6 @@ class _CallLogsState extends State<CallLogs> {
                 height: MediaQuery.of(context).size.height * 0.8,
                 child: ListView.builder(
                   shrinkWrap: true,
-                  physics: NeverScrollableScrollPhysics(),
                   itemCount: allCallLogs.length,
                   itemBuilder: (context, index) {
                     IconData iconData;
@@ -72,7 +71,7 @@ class _CallLogsState extends State<CallLogs> {
                         break;
                       case false:
                         iconData = Icons.call_received;
-                        iconColor = Colors.green;
+                        iconColor = Colors.red;
                         break;
                       default:
                         iconData = Icons.call;
@@ -112,12 +111,12 @@ class _CallLogsState extends State<CallLogs> {
                             onTap: () {
                               final userIdProvider = Provider.of<UserIdProvider>(context, listen: false);
                               int uid = userIdProvider.userId;
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (context) => VideoCallScreen(userId: uid),
-                                ), // Navigate to VideoCall screen
-                              );
+                              // Navigator.push(
+                              //   context,
+                              //   MaterialPageRoute(
+                              //     builder: (context) => VideoCallScreen(userId: uid),
+                              //   ), // Navigate to VideoCall screen
+                              // );
                             },
                             child: Icon(
                               Icons.videocam,

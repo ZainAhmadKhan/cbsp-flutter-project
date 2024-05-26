@@ -50,21 +50,13 @@ class _LessonsState extends State<Lessons> {
         print('Navigate to Expert screen');
       },
     ),
-    ButtonInfo(
-      image: 'assets/Images/Custom1.png',
-      text: 'Custom Gestures',
-      onPressed: () {
-        // Navigate to Custom Gestures screen
-        print('Navigate to Custom Gestures screen');
-      },
-    ),
   ];
 
   @override
   Widget build(BuildContext context) {
     return Column(
       children: [
-        SizedBox(height: 20,),
+        SizedBox(height: 40,),
         Expanded(
           child: ListView.builder(
             itemCount: buttons.length,
@@ -72,7 +64,7 @@ class _LessonsState extends State<Lessons> {
               final button = buttons[index];
               final color = buttonColors[index % buttonColors.length];
               return Padding(
-                padding: const EdgeInsets.all(10.0),
+                padding: const EdgeInsets.all(20.0),
                 child: ElevatedButton(
                   onPressed: button.onPressed,
                   style: ButtonStyle(
@@ -105,30 +97,6 @@ class _LessonsState extends State<Lessons> {
                 ),
               );
             },
-          ),
-        ),
-        
-        
-        ElevatedButton(
-          onPressed: () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(builder: (context) => CustomSigns()),
-            );
-          },
-          style: ElevatedButton.styleFrom(
-            foregroundColor: Colors.white,
-            backgroundColor: Colors.blue,
-            maximumSize: Size(300, 50),
-            minimumSize: Size(300, 50)
-          ),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(Icons.add), // Plus icon
-              SizedBox(width: 8), // Some space between the icon and the text
-              Text('Add Custom Signs', style: TextStyle(fontSize: 18),),
-            ],
           ),
         ),
 

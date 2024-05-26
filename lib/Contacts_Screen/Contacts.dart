@@ -1,8 +1,11 @@
+import 'package:audioplayers/audioplayers.dart';
 import 'package:cbsp_flutter_app/APIsHandler/ContactsAPI.dart';
 import 'package:cbsp_flutter_app/Contacts_Screen/ShowAllContacts.dart';
 import 'package:cbsp_flutter_app/Contacts_Screen/UserProfile.dart';
 import 'package:cbsp_flutter_app/CustomWidget/GlobalVariables.dart';
-import 'package:cbsp_flutter_app/VideoCall/VideoCallScreen.dart';
+import 'package:cbsp_flutter_app/VideoCall/screens/CallIncomingScreen.dart';
+import 'package:cbsp_flutter_app/VideoCall/screens/call_screen.dart';
+import 'package:cbsp_flutter_app/VideoCall/services/signalling.service.dart';
 import 'package:flutter/material.dart';
 import 'package:cbsp_flutter_app/Provider/UserIdProvider.dart'; 
 import 'package:provider/provider.dart';
@@ -19,26 +22,54 @@ class _ContactsState extends State<Contacts> {
   Set<int> pinnedContacts = {};
   Set<int> mutedContacts = {};
   Set<int> blockedContacts = {};
-  // bool _isLoading = true;
+  dynamic incomingSDPOffer;
+  AudioCache _audioCache = AudioCache();
+  late AudioPlayer _audioPlayer;
  
   @override
   void initState() {
-    super.initState();
+    super.initState(); 
     final userIdProvider = Provider.of<UserIdProvider>(context, listen: false);
     int uid = userIdProvider.userId;
-    // int uid=3;
-    // _startLoading();
-    _loadPinnedMutedAndBlockedContacts();
     _fetchContacts(uid);
+    _loadPinnedMutedAndBlockedContacts();
+    _setupIncomingCallListener();
   }
 
-  // void _startLoading() async {
-  //   await Future.delayed(Duration(seconds: 3));
-  //   setState(() {
-  //     _isLoading = false;
-  //   });
-  // }
+  void _setupIncomingCallListener() {
+    SignallingService.instance.socket!.on("newCall", (data) {
+      if (mounted) {
+        // Set SDP Offer of incoming call
+        setState(() => incomingSDPOffer = data);
+        final player = AudioPlayer();
+        player.play(AssetSource('assets/mp3_files/samsung_galaxy.mp3'));
+        // You can navigate to the call screen automatically here if needed
+        // _receiveCall(
+        //   callerId: data["callerId"],
+        //   calleeId: uid.toString(),
+        //   offer: data["sdpOffer"],
+        // );
 
+      }
+    });
+  }
+  
+  _receiveCall({
+    required String callerId,
+    required String calleeId,
+    dynamic offer,
+  }) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => CallIncomingScreen(
+          callerId: callerId,
+          calleeId: calleeId,
+          offer: offer,
+        ),
+      ),
+    );
+  }
 
   Future<void> _fetchContacts(int userid) async {
     try {
@@ -55,8 +86,8 @@ class _ContactsState extends State<Contacts> {
   void _reorderContacts() {
     setState(() {
       contacts.sort((a, b) {
-        int aId = getUserIdFromProfilePicture(a.profilePicture);
-        int bId = getUserIdFromProfilePicture(b.profilePicture);
+        int aId = a.id;
+        int bId = b.id;
         if (pinnedContacts.contains(aId) && !pinnedContacts.contains(bId)) {
           return -1;
         } else if (!pinnedContacts.contains(aId) && pinnedContacts.contains(bId)) {
@@ -66,12 +97,6 @@ class _ContactsState extends State<Contacts> {
         }
       });
     });
-  }
-
-  int getUserIdFromProfilePicture(String profilePicture) {
-    final parts = profilePicture.split('_'); 
-    final idPart = parts.last.split('.').first; 
-    return int.tryParse(idPart) ?? 0; 
   }
  
   void _showErrorMessage(String message) {
@@ -122,7 +147,7 @@ class _ContactsState extends State<Contacts> {
   }
 
   void _togglePinContact(UserContact contact) {
-    final userId = getUserIdFromProfilePicture(contact.profilePicture);
+    final userId = contact.id;
     setState(() {
       if (pinnedContacts.contains(userId)) {
         pinnedContacts.remove(userId);
@@ -135,7 +160,7 @@ class _ContactsState extends State<Contacts> {
   }
 
   void _toggleMuteContact(UserContact contact) {
-    final userId = getUserIdFromProfilePicture(contact.profilePicture);
+    final userId = contact.id;
     setState(() {
       if (mutedContacts.contains(userId)) {
         mutedContacts.remove(userId);
@@ -147,7 +172,7 @@ class _ContactsState extends State<Contacts> {
   }
 
   void _toggleBlockContact(UserContact contact) {
-    final userId = getUserIdFromProfilePicture(contact.profilePicture);
+    final userId = contact.id;
     setState(() {
       if (blockedContacts.contains(userId)) {
         blockedContacts.remove(userId);
@@ -181,103 +206,163 @@ class _ContactsState extends State<Contacts> {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setStringList('blockedContacts', blockedContacts.map((e) => e.toString()).toList());
   }
+  _joinCall({
+    required String callerId,
+    required String calleeId,
+    dynamic offer,
+  }) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => CallScreen(
+          callerId: callerId,
+          calleeId: calleeId,
+          offer: offer,
+        ),
+      ),
+    );
+  }
 
-  @override
+ @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
-      body: 
-      // _isLoading
-      //     ? Center(
-      //         child: CircularProgressIndicator(),
-      //       )
-      //     : 
-          SingleChildScrollView(
+      body: SingleChildScrollView(
         child: Center(
           child: Column(
             children: [
+              // Incoming Call UI
+              if (incomingSDPOffer != null)
+                Positioned(
+                  child: ListTile(
+                    title: Text(
+                      "Incoming Call from ${incomingSDPOffer["callerId"]}",
+                    ),
+                    trailing: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        IconButton(
+                          icon: const Icon(Icons.call_end),
+                          color: Colors.redAccent,
+                          onPressed: () {
+                            setState(() => incomingSDPOffer = null);
+                            // Stop ringtone when call is declined
+                            _audioPlayer.stop();
+                          },
+                        ),
+                        IconButton(
+                          icon: const Icon(Icons.call),
+                          color: Colors.greenAccent,
+                          onPressed: () {
+                            final userIdProvider = Provider.of<UserIdProvider>(context, listen: false);
+                            int uid = userIdProvider.userId;
+                            _joinCall(
+                              callerId: incomingSDPOffer["callerId"]!,
+                              calleeId: uid.toString(),
+                              offer: incomingSDPOffer["sdpOffer"],
+                            );
+                            // Stop ringtone when call is accepted
+                            _audioPlayer.stop();
+                          },
+                        )
+                      ],
+                    ),
+                  ),
+                ),
               Container(
                 height: MediaQuery.of(context).size.height * 0.8,
                 child: ListView.builder(
                   shrinkWrap: true,
-                  itemCount: contacts.length,
+                  itemCount: contacts.length + 1,
                   itemBuilder: (context, index) {
-                    final contact = contacts[index];
-                    final userId = getUserIdFromProfilePicture(contact.profilePicture);
-                    String imageUrl = '$Url/profile_pictures/';
-                    String imageName = contact.profilePicture;
-                    String profileImage = imageUrl + imageName;
-                    bool isPinned = pinnedContacts.contains(getUserIdFromProfilePicture(contact.profilePicture));
-                    bool isMuted = mutedContacts.contains(getUserIdFromProfilePicture(contact.profilePicture));
-                    bool isBlocked = blockedContacts.contains(getUserIdFromProfilePicture(contact.profilePicture));
+                    if (index == contacts.length) {
+                      return SizedBox(height: 80);
+                    }
+                  final contact = contacts[index];
+                  final userId = contact.id;
+                  String imageUrl = '$Url/profile_pictures/';
+                  String imageName = contact.profilePicture;
+                  String profileImage = imageUrl + imageName;
+                  bool isPinned = pinnedContacts.contains(userId);
+                  bool isMuted = mutedContacts.contains(userId);
+                  bool isBlocked = blockedContacts.contains(userId);
 
-                    return GestureDetector(
-                      onTap: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(builder: (context) => UserProfile(userId: userId)), // Navigate to UserProfile screen
-                        );
-                      },
-                      onLongPress: () => _showOptions(context, contact),
-                      child: ListTile(
-                        leading: CircleAvatar(
-                          backgroundImage: NetworkImage(profileImage), 
-                        ),
-                        title: Text('${contact.fname} ${contact.lname}'),
-                        subtitle: Text(contact.bioStatus),
-                        trailing: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            if (isPinned) Icon(Icons.push_pin, size: 20, color: Colors.grey),
-                            if (isMuted) Icon(Icons.volume_off, size: 20, color: Colors.grey),
-                            if (isBlocked) Icon(Icons.block, size: 20, color: Colors.grey),
-                            SizedBox(width: 10),
-                            CircleAvatar(
-                              radius: 5,
-                              backgroundColor: contact.onlineStatus == 1 ? Colors.green : Colors.grey,
-                            ),
-                            SizedBox(width: 20),
-                            GestureDetector(
-                              onTap: () {
-                                Navigator.push(
-                                  context,
-                                  MaterialPageRoute(builder: (context) => VideoCallScreen(userId: userId)), // Navigate to VideoCall screen
-                                );
-                              },
-                              child: Icon(
-                                Icons.videocam,
-                                color: Colors.grey,
-                                size: 32,
-                              ),
-                            ),
-                          ],
-                        ),
+                  return GestureDetector(
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (context) => UserProfile(userId: userId)), // Navigate to UserProfile screen
+                      );
+                    },
+                    onLongPress: () => _showOptions(context, contact),
+                    child: ListTile(
+                      leading: CircleAvatar(
+                        backgroundImage: NetworkImage(profileImage), 
                       ),
-                    );
-                  },
-                ),
+                      title: Text('${contact.fname} ${contact.lname}'),
+                      subtitle: Text(contact.bioStatus),
+                      trailing: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          if (isPinned) Icon(Icons.push_pin, size: 20, color: Colors.grey),
+                          if (isMuted) Icon(Icons.volume_off, size: 20, color: Colors.grey),
+                          if (isBlocked) Icon(Icons.block, size: 20, color: Colors.grey),
+                          SizedBox(width: 10),
+                          CircleAvatar(
+                            radius: 5,
+                            backgroundColor: contact.onlineStatus == 1 ? Colors.green : Colors.grey,
+                          ),
+                          SizedBox(width: 20),
+                          GestureDetector(
+                            onTap: () {
+                              final userIdProvider = Provider.of<UserIdProvider>(context, listen: false);
+                              int uid = userIdProvider.userId;
+                              // Navigator.push(
+                              //   context,
+                              //   MaterialPageRoute(
+                              //     builder: (_) => SendingCallScreen(
+                              //       callerId: uid.toString(),
+                              //       calleeId: contact.id.toString(),
+                              //     ),
+                              //   ),
+                              // );
+                              _joinCall(
+                                callerId: uid.toString(),
+                                calleeId: contact.id.toString(),
+                              );
+                            },
+                            child: Icon(
+                              Icons.videocam,
+                              color: Colors.grey,
+                              size: 32,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  );
+                },
               ),
-            ],
-          ),
+            ),
+          ],      
         ),
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () {
-          final userIdProvider = Provider.of<UserIdProvider>(context, listen: false);
-          int uid = userIdProvider.userId;
-          // int uid=3;
-          // print("Floating Uid $uid");
-          Navigator.push(
-            context,
-            MaterialPageRoute(builder: (context) => ShowAllContacts(userId: uid)),
-          );
-        },
-        backgroundColor: Colors.blue,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(10.0),
-        ),
-        child: Icon(Icons.add),
+    ),
+    floatingActionButton: FloatingActionButton(
+      onPressed: () {
+        final userIdProvider = Provider.of<UserIdProvider>(context, listen: false);
+        int uid = userIdProvider.userId;
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (context) => ShowAllContacts(userId: uid)),
+        );
+      },
+      backgroundColor: Colors.blue,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(10.0),
       ),
-    );
-  }
+      child: Icon(Icons.add),
+    ),
+  );
+}
 }
