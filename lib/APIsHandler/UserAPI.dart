@@ -179,6 +179,26 @@ class UserApiHandler {
       throw Exception('Failed to search by email');
     }
   }
+
+  static Future<bool> updateUserProfile(UpdateUserProfile profile) async {
+    final url = Uri.parse('$baseUrl/update-profile');
+    final headers = {'Content-Type': 'application/json'};
+    final body = json.encode(profile.toJson());
+
+    final response = await http.put(
+      url,
+      headers: headers,
+      body: body,
+    );
+
+    if (response.statusCode == 200) {
+      print('Profile updated successfully');
+      return true;
+    } else {
+      print('Failed to update profile: ${response.body}');
+      return false;
+    }
+  }
 }
 
 class UserDetails {
@@ -302,5 +322,37 @@ class SearchResult {
       onlineStatus: json['online_status'],
       isFriend: json['is_friend'],
     );
+  }
+}
+
+class UpdateUserProfile {
+  final int userId;
+  final String currentPassword;
+  final String newPassword;
+  final String newFname;
+  final String newLname;
+  final String newBioStatus;
+  final String newDisabilityType;
+
+  UpdateUserProfile({
+    required this.userId,
+    required this.currentPassword,
+    required this.newPassword,
+    required this.newFname,
+    required this.newLname,
+    required this.newBioStatus,
+    required this.newDisabilityType,
+  });
+
+  Map<String, dynamic> toJson() {
+    return {
+      'user_id': userId,
+      'current_password': currentPassword,
+      'new_password': newPassword,
+      'new_fname': newFname,
+      'new_lname': newLname,
+      'new_bio_status': newBioStatus,
+      'new_disability_type': newDisabilityType,
+    };
   }
 }

@@ -21,42 +21,25 @@ Future<void> _checkDatabaseConnection() async {
   bool isConnected = await UserApiHandler.checkConnection();
 
   if (!isConnected) {
-    showDialog (
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text('Connection Error'),
-        content: Text('Failed to connect to the database.'),
-        actions: [
-          TextButton(
-            onPressed: () {
-              Navigator.pop(context); // Close the dialog
-              _checkDatabaseConnection(); // Retry the database connection
-            },
-            child: Text('Retry'),
-          ),
-        ],
-      ),
-    );
+    _showMessage("Database Connection Error!");
   }
   else
   {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text('Connection Sucessful'),
-        content: Text('Connected to the database.'),
-        actions: [
-          TextButton(
-            onPressed: () {
-              Navigator.pop(context); // Close the dialog
-            },
-            child: Text('Done'),
-          ),
-        ],
+    _showMessage("Database Connected");
+  }
+
+}
+
+ void _showMessage(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        duration: Duration(seconds: 3),
       ),
     );
   }
-}
+
+ 
 
   @override
   Widget build(BuildContext context) {

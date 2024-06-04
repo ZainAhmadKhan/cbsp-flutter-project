@@ -1,11 +1,8 @@
 import 'package:cbsp_flutter_app/CustomWidget/GlobalVariables.dart';
 import 'package:cbsp_flutter_app/Dashboard/Dashboard.dart';
 import 'package:cbsp_flutter_app/Provider/UserIdProvider.dart';
-import 'package:cbsp_flutter_app/VideoCall/screens/SendingCallScreen.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'dart:math';
-import 'screens/join_screen.dart';
 import 'services/signalling.service.dart';
 
 class VideoCallScreen extends StatefulWidget {

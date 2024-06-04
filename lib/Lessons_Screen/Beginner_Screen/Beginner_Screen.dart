@@ -1,18 +1,15 @@
-import 'package:cbsp_flutter_app/CustomSigns/CustomSigns.dart';
-import 'package:cbsp_flutter_app/Lessons_Screen/Beginner_Screen/Beginner_Screen.dart';
-import 'package:cbsp_flutter_app/Lessons_Screen/Expert_Screen/Expert_Screen.dart';
-import 'package:cbsp_flutter_app/Lessons_Screen/Favourites_Screen/Favouites_Screen.dart';
-import 'package:cbsp_flutter_app/Lessons_Screen/Intermediate_Screen/Intermediate_Screen.dart';
+import 'package:cbsp_flutter_app/Lessons_Screen/Beginner_Screen/Alphabets/Alphabets.dart';
+import 'package:cbsp_flutter_app/Lessons_Screen/Beginner_Screen/Words/Words.dart';
 import 'package:flutter/material.dart';
 
-class Lessons extends StatefulWidget {
-  const Lessons({Key? key}) : super(key: key);
+class Beginner extends StatefulWidget {
+  const Beginner({super.key});
 
   @override
-  State<Lessons> createState() => _LessonsState();
+  State<Beginner> createState() => _BeginnerState();
 }
 
-class _LessonsState extends State<Lessons> {
+class _BeginnerState extends State<Beginner> {
   final List<Color> buttonColors = [
     Colors.lightBlue[100]!,
     Colors.lightGreen[100]!,
@@ -32,51 +29,49 @@ class _LessonsState extends State<Lessons> {
   List<ButtonInfo> initializeButtons() {
     return [
       ButtonInfo(
-        image: 'assets/Images/Favourite.png',
-        text: 'Favorites',
+        image: 'assets/Images/Alphabets.png',
+        text: 'Alphabets',
         onPressed: () {
           Navigator.push(
             context,
-            MaterialPageRoute(builder: (context) => Favorites()),
+            MaterialPageRoute(builder: (context) => Alphabets()),
           );
         },
       ),
       ButtonInfo(
-        image: 'assets/Images/Beginner.png',
-        text: 'Beginner',
+        image: 'assets/Images/Words.png',
+        text: 'Words',
         onPressed: () {
           Navigator.push(
             context,
-            MaterialPageRoute(builder: (context) => Beginner()),
-          );
-        },
-      ),
-      ButtonInfo(
-        image: 'assets/Images/Intermediate.png',
-        text: 'Intermediate',
-        onPressed: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(builder: (context) => Intermediate()),
-          );
-        },
-      ),
-      ButtonInfo(
-        image: 'assets/Images/Expert.png',
-        text: 'Expert',
-        onPressed: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(builder: (context) => Expert()),
-          );
+            MaterialPageRoute(builder: (context) => Words()),
+          );          
         },
       ),
     ];
   }
-
-  @override
+   @override
   Widget build(BuildContext context) {
-    return Column(
+    return Scaffold(
+      appBar: AppBar(
+        iconTheme: IconThemeData(
+            color: Colors.black, 
+          ),
+        backgroundColor: Colors.grey[300],
+        title: const Row(
+          children: [
+            Text(
+              'Beginner Level',
+              style: TextStyle(
+                fontSize: 25,
+                color: Colors.black,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ],
+        ),
+      ),
+      body: Column(
       children: [
         SizedBox(height: 40,),
         Expanded(
@@ -109,9 +104,8 @@ class _LessonsState extends State<Lessons> {
                       ),
                       Spacer(), // Spacer to push the play button to the end
                       IconButton(
-                        icon: Icon(Icons.play_circle_filled, color: Colors.black),
-                        onPressed: button.onPressed
-                       
+                        onPressed: button.onPressed,
+                        icon: Icon(Icons.play_circle_filled,color: Colors.black,),
                       ),
                     ],
                   ),
@@ -123,9 +117,11 @@ class _LessonsState extends State<Lessons> {
 
         SizedBox(height: 50,)
       ],
+    ),
     );
   }
 }
+    
 
 class ButtonInfo {
   final String image;
@@ -134,3 +130,5 @@ class ButtonInfo {
 
   ButtonInfo({required this.image, required this.text, required this.onPressed});
 }
+
+

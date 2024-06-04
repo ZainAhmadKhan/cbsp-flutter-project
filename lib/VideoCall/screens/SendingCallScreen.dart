@@ -26,6 +26,7 @@ class _SendingCallScreenState extends State<SendingCallScreen> {
   bool isCameraOff = false;
   final remoteCallerIdTextEditingController = TextEditingController();
   UserDetails? user;
+  dynamic incomingSDPOffer;
 
   @override
   void initState() {
@@ -52,6 +53,11 @@ class _SendingCallScreenState extends State<SendingCallScreen> {
           duration: Duration(seconds: 2),
         ),
       );
+    }
+    void _handleCallEnd() {
+      setState(() {
+        incomingSDPOffer = null;
+      });
     }
 
   @override
@@ -105,8 +111,8 @@ class _SendingCallScreenState extends State<SendingCallScreen> {
   }
 
   void _endCall() {
-    _localStream.dispose();
     Navigator.pop(context);
+     _localStream.dispose();
   }
 
   @override
@@ -121,6 +127,7 @@ class _SendingCallScreenState extends State<SendingCallScreen> {
             callerId: widget.callerId,
             calleeId: widget.calleeId,
             offer: widget.offer,
+            onCallEnd: _handleCallEnd,
           ),
         ),
       );

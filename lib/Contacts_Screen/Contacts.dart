@@ -23,8 +23,8 @@ class _ContactsState extends State<Contacts> {
   Set<int> mutedContacts = {};
   Set<int> blockedContacts = {};
   dynamic incomingSDPOffer;
-  AudioCache _audioCache = AudioCache();
-  late AudioPlayer _audioPlayer;
+  final AudioPlayer _audioPlayer = AudioPlayer();
+  final socket = SignallingService.instance.socket;
  
   @override
   void initState() {
@@ -34,15 +34,20 @@ class _ContactsState extends State<Contacts> {
     _fetchContacts(uid);
     _loadPinnedMutedAndBlockedContacts();
     _setupIncomingCallListener();
+    SignallingService.instance.socket!.on('endCall', (data) {
+      _leaveCall();
+    });
   }
 
   void _setupIncomingCallListener() {
     SignallingService.instance.socket!.on("newCall", (data) {
       if (mounted) {
         // Set SDP Offer of incoming call
-        setState(() => incomingSDPOffer = data);
-        final player = AudioPlayer();
-        player.play(AssetSource('assets/mp3_files/samsung_galaxy.mp3'));
+        setState(() {
+          incomingSDPOffer = data;
+          _playRingtone();
+        });
+        
         // You can navigate to the call screen automatically here if needed
         // _receiveCall(
         //   callerId: data["callerId"],
@@ -53,22 +58,10 @@ class _ContactsState extends State<Contacts> {
       }
     });
   }
-  
-  _receiveCall({
-    required String callerId,
-    required String calleeId,
-    dynamic offer,
-  }) {
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (_) => CallIncomingScreen(
-          callerId: callerId,
-          calleeId: calleeId,
-          offer: offer,
-        ),
-      ),
-    );
+  void _handleCallEnd() {
+    setState(() {
+      incomingSDPOffer = null;
+    });
   }
 
   Future<void> _fetchContacts(int userid) async {
@@ -81,6 +74,18 @@ class _ContactsState extends State<Contacts> {
     } catch (e) {
       _showErrorMessage("No Contacts Load Error!");
     }
+  }
+
+  Future<void> _playRingtone() async {
+    try{
+      await _audioPlayer.setSourceAsset("mp3_files/samsung_galaxy.mp3");
+      await _audioPlayer.resume();
+    } catch (e) {
+      print("Error: $e");
+    }
+  }
+  void _stopRingtone() {
+    _audioPlayer.stop();
   }
 
   void _reorderContacts() {
@@ -218,7 +223,27 @@ class _ContactsState extends State<Contacts> {
           callerId: callerId,
           calleeId: calleeId,
           offer: offer,
+          onCallEnd: _handleCallEnd,
         ),
+      ),
+    );
+  }
+  _leaveCall() {
+    final userIdProvider = Provider.of<UserIdProvider>(context, listen: false);
+    int uid = userIdProvider.userId;
+    socket!.emit('endCall', {
+      'callerId': incomingSDPOffer["callerId"]!,
+      'calleeId': uid.toString(),
+    });
+    socket!.on('disconnect', (_) {
+      _showMessage("Call Ended");
+    });
+  }
+   void _showMessage(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        duration: Duration(seconds: 5),
       ),
     );
   }
@@ -233,41 +258,58 @@ class _ContactsState extends State<Contacts> {
             children: [
               // Incoming Call UI
               if (incomingSDPOffer != null)
-                Positioned(
-                  child: ListTile(
-                    title: Text(
-                      "Incoming Call from ${incomingSDPOffer["callerId"]}",
-                    ),
-                    trailing: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        IconButton(
-                          icon: const Icon(Icons.call_end),
-                          color: Colors.redAccent,
-                          onPressed: () {
-                            setState(() => incomingSDPOffer = null);
-                            // Stop ringtone when call is declined
-                            _audioPlayer.stop();
-                          },
-                        ),
-                        IconButton(
-                          icon: const Icon(Icons.call),
-                          color: Colors.greenAccent,
-                          onPressed: () {
-                            final userIdProvider = Provider.of<UserIdProvider>(context, listen: false);
-                            int uid = userIdProvider.userId;
-                            _joinCall(
-                              callerId: incomingSDPOffer["callerId"]!,
-                              calleeId: uid.toString(),
-                              offer: incomingSDPOffer["sdpOffer"],
-                            );
-                            // Stop ringtone when call is accepted
-                            _audioPlayer.stop();
-                          },
-                        )
-                      ],
-                    ),
+                ListTile(
+                  title: Text(
+                    "Incoming Call from ${incomingSDPOffer["callerId"]}",
                   ),
+                  trailing: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      IconButton(
+                        icon: const Icon(Icons.call_end),
+                        color: Colors.redAccent,
+                        onPressed: () {
+                          _leaveCall;
+                          setState(() => incomingSDPOffer = null);
+                          // Stop ringtone when call is declined
+                          _stopRingtone();
+
+                        },
+                      ),
+                      IconButton(
+                        icon: const Icon(Icons.call),
+                        color: Colors.greenAccent,
+                        onPressed: () {
+                          _stopRingtone();
+                          final userIdProvider = Provider.of<UserIdProvider>(context, listen: false);
+                          int uid = userIdProvider.userId;
+                          _joinCall(
+                            callerId: incomingSDPOffer["callerId"]!,
+                            calleeId: uid.toString(),
+                            offer: incomingSDPOffer["sdpOffer"],
+                          );
+                          // Stop ringtone when call is accepted
+                        },
+                      )
+                    ],
+                  ),
+                  onTap: ()
+                  {
+                    final userIdProvider = Provider.of<UserIdProvider>(context, listen: false);
+                    int uid = userIdProvider.userId;
+                    _stopRingtone();
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => CallIncomingScreen(
+                          callerId: incomingSDPOffer["callerId"]!,
+                          calleeId: uid.toString(),
+                          offer: incomingSDPOffer["sdpOffer"],
+                          onCallEnd: _handleCallEnd,
+                        ),
+                      ),
+                    );
+                  },
                 ),
               Container(
                 height: MediaQuery.of(context).size.height * 0.8,

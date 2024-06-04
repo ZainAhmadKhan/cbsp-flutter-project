@@ -1,8 +1,9 @@
+import 'package:audioplayers/audioplayers.dart';
 import 'package:cbsp_flutter_app/APIsHandler/UserAPI.dart';
-import 'package:cbsp_flutter_app/Contacts_Screen/Contacts.dart';
 import 'package:cbsp_flutter_app/CustomWidget/GlobalVariables.dart';
 import 'package:cbsp_flutter_app/Provider/CheckCallStatusProvider.dart';
 import 'package:cbsp_flutter_app/VideoCall/screens/call_screen.dart';
+import 'package:cbsp_flutter_app/VideoCall/services/signalling.service.dart';
 import 'package:flutter/material.dart';
 
 import 'package:provider/provider.dart';
@@ -11,11 +12,13 @@ import 'package:provider/provider.dart';
 class CallIncomingScreen extends StatefulWidget {
   final String callerId, calleeId;
   final dynamic offer;
+  final VoidCallback onCallEnd;
   const CallIncomingScreen({
     super.key,
     this.offer,
     required this.callerId,
     required this.calleeId,
+    required this.onCallEnd,
   });
 
   @override
@@ -25,11 +28,29 @@ class CallIncomingScreen extends StatefulWidget {
 class _CallIncomingScreenState extends State<CallIncomingScreen> {
   bool callAccepted=false;
   UserDetails? user;
+  final AudioPlayer _audioPlayer = AudioPlayer();
+  dynamic incomingSDPOffer;
+  final socket = SignallingService.instance.socket;
 
   @override
   void initState() {
     super.initState();
+    _playRingtone();
     _fetchUserDetails(int.parse(widget.callerId));
+    
+    SignallingService.instance.socket!.on('endCall', (data) {
+      _leaveCall();
+    });
+
+  }
+
+  Future<void> _playRingtone() async {
+    try{
+      await _audioPlayer.setSourceAsset("mp3_files/samsung_galaxy.mp3");
+      await _audioPlayer.resume();
+    } catch (e) {
+      print("Error: $e");
+    }
   }
 
   Future<void> _fetchUserDetails(int userId) async {
@@ -47,7 +68,36 @@ class _CallIncomingScreenState extends State<CallIncomingScreen> {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(message),
-        duration: Duration(seconds: 2),
+        duration: Duration(seconds: 5),
+      ),
+    );
+  }
+  void _handleCallEnd() {
+    setState(() {
+      incomingSDPOffer = null;
+    });
+  }
+
+  void _stopRingtone() {
+    _audioPlayer.stop();
+  }
+  _leaveCall() {
+    socket!.emit('endCall', {
+      'callerId': widget.callerId,
+      'calleeId': widget.calleeId,
+    });
+    socket!.on('disconnect', (_) {
+      _showMessage("Call Ended");
+    });
+    widget.onCallEnd();
+    Navigator.pop(context);
+  }
+
+  void _showMessage(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        duration: Duration(seconds: 5),
       ),
     );
   }
@@ -64,7 +114,7 @@ class _CallIncomingScreenState extends State<CallIncomingScreen> {
             child: Container(
               decoration: BoxDecoration(
                 image: DecorationImage(
-                  image: AssetImage('android/assets/backgroundImage.png'),
+                  image: AssetImage('assets/Images/backgroundImage.png'),
                   fit: BoxFit.cover,
                 ),
               ),
@@ -78,7 +128,7 @@ class _CallIncomingScreenState extends State<CallIncomingScreen> {
                   SizedBox(height: 100,),
                   Center(
                     child: CircleAvatar(
-                      radius: 50,
+                      radius: 80,
                       backgroundImage: user != null
                           ? NetworkImage(profileImage)
                           : AssetImage('assets/person.png') as ImageProvider,
@@ -88,7 +138,7 @@ class _CallIncomingScreenState extends State<CallIncomingScreen> {
                   Center(
                     child: Text(
                       '${user?.fname} ${user?.lname}', // Display user's full name
-                      style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                      style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Colors.white),
                     ),
                   ),
                   SizedBox(height: 8),
@@ -123,6 +173,7 @@ class _CallIncomingScreenState extends State<CallIncomingScreen> {
                       Provider.of<checkCallAccepted>(context, listen: false).setCallStatus(callAccepted);
                     });
                   });
+                  _stopRingtone();
                   Navigator.push(
                     context,
                     MaterialPageRoute(
@@ -130,6 +181,7 @@ class _CallIncomingScreenState extends State<CallIncomingScreen> {
                         callerId: widget.callerId,
                         calleeId: widget.calleeId,
                         offer: widget.offer,
+                        onCallEnd: _handleCallEnd,
                       ),
                     ),
                   );
@@ -159,13 +211,11 @@ class _CallIncomingScreenState extends State<CallIncomingScreen> {
                     WidgetsBinding.instance.addPostFrameCallback((_) {
                       Provider.of<checkCallAccepted>(context, listen: false).setCallStatus(callAccepted);
                     });
+                    incomingSDPOffer = null;
                   });
-                  Navigator.pushReplacement(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => Contacts(),
-                    ),
-                  );
+                  _stopRingtone();
+                  // _leaveCall();
+                  Navigator.pop(context);
                 }
               },
             ),

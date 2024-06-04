@@ -1,7 +1,5 @@
 import 'package:cbsp_flutter_app/APIsHandler/ParticipantAPI.dart';
-import 'package:cbsp_flutter_app/Contacts_Screen/UserProfile.dart';
 import 'package:cbsp_flutter_app/CustomWidget/GlobalVariables.dart';
-import 'package:cbsp_flutter_app/VideoCall/VideoCallScreen.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -22,7 +20,7 @@ class _CallLogsState extends State<CallLogs> {
     super.initState();
     final userIdProvider = Provider.of<UserIdProvider>(context, listen: false);
     int uid = userIdProvider.userId;
-    _fetchUserCallLogs(3);
+    _fetchUserCallLogs(uid);
   }
 
   Future<void> _fetchUserCallLogs(int userId) async {

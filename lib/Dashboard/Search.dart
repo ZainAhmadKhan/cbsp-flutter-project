@@ -2,7 +2,6 @@ import 'package:cbsp_flutter_app/APIsHandler/ContactsAPI.dart';
 import 'package:cbsp_flutter_app/Contacts_Screen/UserProfile.dart';
 import 'package:cbsp_flutter_app/CustomWidget/GlobalVariables.dart';
 import 'package:cbsp_flutter_app/Provider/UserIdProvider.dart';
-import 'package:cbsp_flutter_app/VideoCall/VideoCallScreen.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -69,6 +68,9 @@ class _SearchScreenState extends State<SearchScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
+        iconTheme: IconThemeData(
+          color: Colors.black, 
+        ),
         backgroundColor: Colors.grey[300],
         title: const Text(
           'Search Contacts',

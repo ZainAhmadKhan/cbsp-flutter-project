@@ -50,22 +50,25 @@ class _SettingsState extends State<Settings> {
   Widget build(BuildContext context) {
     String imageUrl = '$Url/profile_pictures/';
     String profileImage = user != null ? imageUrl + user!.profilePicture : 'assets/person.png';
-    return Scaffold(
-      appBar: AppBar(
-        backgroundColor: Colors.grey[300],
-        title: const Row(
-          children: [
-            Text(
-              'Settings',
-              style: TextStyle(
-                fontSize: 25,
-                color: Colors.black,
-                fontWeight: FontWeight.bold,
+      return Scaffold(
+        appBar: AppBar(
+          iconTheme: IconThemeData(
+            color: Colors.black, 
+          ),
+          backgroundColor: Colors.grey[300],
+          title: const Row(
+            children: [
+              Text(
+                'Settings',
+                style: TextStyle(
+                  fontSize: 25,
+                  color: Colors.black,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
-      ),
       body: Padding(
         padding: EdgeInsets.all(20.0),
         child: Column(
@@ -97,8 +100,10 @@ class _SettingsState extends State<Settings> {
                     icon: Icon(
                       Icons.arrow_forward,
                       size: 20.0,
+                      color: Colors.blue,
                     ),
                   ),
+                  Text("Edit",style: TextStyle(fontSize: 17),)
                 ],
               ),
             ),
@@ -114,11 +119,11 @@ class _SettingsState extends State<Settings> {
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   SettingButton(label: 'General'),
-                  SizedBox(height: 10,),
+                  SizedBox(height: 20,),
                   SettingButton(label: 'Notifications'),
-                  SizedBox(height: 10,),
+                  SizedBox(height: 20,),
                   SettingButton(label: 'Terms and Conditions'),
-                  SizedBox(height: 10,),
+                  SizedBox(height: 20,),
                   SettingButton(label: 'About Comm Fusion'),
                 ],
               ),

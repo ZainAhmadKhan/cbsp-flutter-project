@@ -1,4 +1,5 @@
 import 'package:cbsp_flutter_app/Dashboard/Search.dart';
+import 'package:cbsp_flutter_app/GroupChat/GroupChat.dart';
 import 'package:cbsp_flutter_app/Provider/UserIdProvider.dart';
 import 'package:flutter/material.dart';
 import 'package:cbsp_flutter_app/CallLogs_Screen/CallLogs.dart';
@@ -80,6 +81,7 @@ class _DashboardState extends State<Dashboard> {
                  children: [
                   Contacts(),
                   CallLogs(),
+                  GroupChat(),
                   Lessons(),
                 ],
                 ),

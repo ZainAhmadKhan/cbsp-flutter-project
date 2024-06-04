@@ -2,7 +2,6 @@ import 'package:cbsp_flutter_app/APIsHandler/ParticipantAPI.dart';
 import 'package:cbsp_flutter_app/APIsHandler/UserAPI.dart';
 import 'package:cbsp_flutter_app/CustomWidget/GlobalVariables.dart';
 import 'package:cbsp_flutter_app/Provider/UserIdProvider.dart';
-import 'package:cbsp_flutter_app/VideoCall/VideoCallScreen.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -69,6 +68,9 @@ class _UserProfileState extends State<UserProfile> {
     return Scaffold(
       appBar: AppBar(
         backgroundColor: Colors.grey[300],
+        iconTheme: IconThemeData(
+            color: Colors.black, 
+          ),
         title: const Text(
           'Profile',
           style: TextStyle(
@@ -161,49 +163,53 @@ class _UserProfileState extends State<UserProfile> {
 
                 String participantImageUrl = imageUrl + callLogs[index].profilePicture;
 
-                return ListTile(
-                  leading: CircleAvatar(
-                    backgroundImage: NetworkImage(participantImageUrl), // Participant's image
-                  ),
-                  title: Text('${callLogs[index].otherParticipantFname} ${callLogs[index].otherParticipantLname}'),
-                  subtitle: Row(
-                    children: [
-                      Icon(
-                        iconData,
-                        color: iconColor,
-                        size: 20,
-                      ),
-                      SizedBox(width: 5),
-                      Expanded(
-                        child: Text('${callLogs[index].startTime}'),
-                      ),
-                    ],
-                  ),
-                  trailing: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      SizedBox(width: 40),
-                      CircleAvatar(
-                        radius: 5,
-                        backgroundColor: callLogs[index].onlineStatus == 1 ? Colors.green : Colors.grey,
-                      ),
-                      SizedBox(width: 10),
-                      GestureDetector(
-                        onTap: () {
-                          // Navigator.push(
-                          //   context,
-                          //   MaterialPageRoute(
-                          //     builder: (context) => VideoCallScreen(userId: widget.userId),
-                          //   ), // Navigate to VideoCall screen
-                          // );
-                        },
-                        child: Icon(
-                          Icons.videocam,
-                          color: Colors.grey,
-                          size: 32,
+                return Padding(
+                  padding: const EdgeInsets.all(8.0),
+                  child: ListTile(
+                    leading: CircleAvatar(
+                      radius: 25,
+                      backgroundImage: NetworkImage(participantImageUrl), // Participant's image
+                    ),
+                    title: Text('${callLogs[index].otherParticipantFname} ${callLogs[index].otherParticipantLname}'),
+                    subtitle: Row(
+                      children: [
+                        Icon(
+                          iconData,
+                          color: iconColor,
+                          size: 20,
                         ),
-                      ),
-                    ],
+                        SizedBox(width: 10),
+                        Expanded(
+                          child: Text('${callLogs[index].startTime}'),
+                        ),
+                      ],
+                    ),
+                    trailing: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        SizedBox(width: 40),
+                        CircleAvatar(
+                          radius: 5,
+                          backgroundColor: callLogs[index].onlineStatus == 1 ? Colors.green : Colors.grey,
+                        ),
+                        SizedBox(width: 10),
+                        GestureDetector(
+                          onTap: () {
+                            // Navigator.push(
+                            //   context,
+                            //   MaterialPageRoute(
+                            //     builder: (context) => VideoCallScreen(userId: widget.userId),
+                            //   ), // Navigate to VideoCall screen
+                            // );
+                          },
+                          child: Icon(
+                            Icons.videocam,
+                            color: Colors.grey,
+                            size: 32,
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                 );
               },
