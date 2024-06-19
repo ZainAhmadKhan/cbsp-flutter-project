@@ -124,7 +124,7 @@ class _UserProfileState extends State<UserProfile> {
                   Icon(Icons.visibility_off, color: Colors.black),
                   SizedBox(width: 5),
                   Text('Blind'),
-                ] else if (user!.disabilityType.toLowerCase() == 'deaf and dumb') ...[
+                ] else if (user!.disabilityType.toLowerCase() == 'deaf and mute') ...[
                   Icon(Icons.hearing_disabled, color: Colors.black),
                   SizedBox(width: 5),
                   Text('Deaf and Dumb'),

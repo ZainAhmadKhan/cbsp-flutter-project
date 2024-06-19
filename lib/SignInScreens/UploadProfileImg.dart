@@ -160,8 +160,8 @@ class _UploadProfileImageState extends State<UploadProfileImage> {
                 }
               },
               style: ElevatedButton.styleFrom(
-                primary: Colors.blue,
-                onPrimary: Colors.white,
+                backgroundColor: Colors.blue,
+                foregroundColor: Colors.white,
                 minimumSize: Size(250, 50),
               ),
               child: Text('Submit'),

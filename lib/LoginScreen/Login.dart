@@ -7,6 +7,7 @@ import 'package:cbsp_flutter_app/CustomWidget/RoundedTextField.dart';
 import 'package:cbsp_flutter_app/Dashboard/Dashboard.dart';
 import 'package:cbsp_flutter_app/SignInScreens/Signup.dart';
 import 'package:provider/provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 
 class LoginScreen extends StatefulWidget {
@@ -20,6 +21,12 @@ class _LoginScreenState extends State<LoginScreen> {
   TextEditingController emailController = TextEditingController();
   TextEditingController passwordController = TextEditingController();
 
+  Future<void> _saveLoginState(bool isLoggedIn, int userId) async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    await prefs.setBool('isLoggedIn', isLoggedIn);
+    await prefs.setInt('userId', userId);
+  }
+  
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -85,10 +92,11 @@ class _LoginScreenState extends State<LoginScreen> {
 
                        if (isLoggedIn) {
                         int userId = loginResult["Id"];
-
                         Provider.of<UserIdProvider>(context, listen: false).setUserId(userId);
-                        
 
+                        // Save login state and userId in shared preferences
+                          await _saveLoginState(true, userId);
+                        
                         Navigator.push(
                           context,
                           MaterialPageRoute(builder: (context) => VideoCallScreen()),

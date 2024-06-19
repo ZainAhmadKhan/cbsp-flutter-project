@@ -180,6 +180,7 @@ class _CallIncomingScreenState extends State<CallIncomingScreen> {
                       builder: (_) => CallScreen(
                         callerId: widget.callerId,
                         calleeId: widget.calleeId,
+                        isCaller: false,
                         offer: widget.offer,
                         onCallEnd: _handleCallEnd,
                       ),

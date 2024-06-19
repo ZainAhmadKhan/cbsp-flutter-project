@@ -103,10 +103,36 @@ class _SettingsState extends State<Settings> {
                       color: Colors.blue,
                     ),
                   ),
-                  Text("Edit",style: TextStyle(fontSize: 17),)
+                  Text("Edit",style: TextStyle(fontSize: 17),),
                 ],
               ),
+              
             ),
+            Row(
+              children: [
+                Text(
+                  'Disability Type',
+                  style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                ),
+                SizedBox(width: 10),
+                if (user?.disabilityType != null) ...[
+                  if (user!.disabilityType.toLowerCase() == 'blind') ...[
+                    Icon(Icons.visibility_off, color: Colors.black),
+                    SizedBox(width: 5),
+                    Text('Blind'),
+                  ] else if (user!.disabilityType.toLowerCase() == 'deaf and mute') ...[
+                    Icon(Icons.hearing_disabled, color: Colors.black),
+                    SizedBox(width: 5),
+                    Text('Deaf and Dumb'),
+                  ] else ...[
+                    Icon(Icons.person, color: Colors.black),
+                    SizedBox(width: 5),
+                    Text('Normal Person'),
+                  ],
+                ],
+              ],
+            ),
+            SizedBox(height: 10),
             // Divider
             Divider(
               thickness: 1.0,
@@ -140,8 +166,8 @@ class _SettingsState extends State<Settings> {
               icon: Icon(Icons.logout),
               label: Text('Logout'),
               style: ElevatedButton.styleFrom(
-                primary: Colors.white,
-                onPrimary: Colors.black,
+                backgroundColor: Colors.white,
+                foregroundColor: Colors.black,
                 elevation: 0,
               ),
             ),

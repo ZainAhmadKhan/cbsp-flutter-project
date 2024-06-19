@@ -18,8 +18,7 @@ class TopNavigator extends StatelessWidget {
         children: [
           _buildNavItem(Icons.people, 'Contacts', 0),
           _buildNavItem(Icons.call, 'Call Logs', 1),
-          _buildNavItem(Icons.chat, 'GroupChat', 2),
-          _buildNavItem(Icons.book, 'Lessons', 3),
+          _buildNavItem(Icons.book, 'Lessons', 2),
         ],
       ),
     );

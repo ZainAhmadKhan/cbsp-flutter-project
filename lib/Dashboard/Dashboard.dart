@@ -81,7 +81,6 @@ class _DashboardState extends State<Dashboard> {
                  children: [
                   Contacts(),
                   CallLogs(),
-                  GroupChat(),
                   Lessons(),
                 ],
                 ),

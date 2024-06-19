@@ -52,7 +52,7 @@ class _AlphabetsState extends State<Alphabets> {
                 );
               },
               style: ElevatedButton.styleFrom(
-                primary: buttonColors[colorIndex],
+                backgroundColor: buttonColors[colorIndex],
                 padding: const EdgeInsets.all(16.0),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(10.0),

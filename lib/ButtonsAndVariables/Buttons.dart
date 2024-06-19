@@ -18,8 +18,8 @@ class CustomButton extends StatelessWidget {
       child: ElevatedButton(
         onPressed: onPressed,
         style: ElevatedButton.styleFrom(
-          primary: Colors.blue, // Fixed background color
-          onPrimary: Colors.white, // Fixed text color
+          backgroundColor: Colors.blue, // Fixed background color
+          foregroundColor: Colors.white, // Fixed text color
           minimumSize: Size(250, 50),
         ),
         child: Text(

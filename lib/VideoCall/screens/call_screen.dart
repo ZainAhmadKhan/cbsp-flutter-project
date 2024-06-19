@@ -1,10 +1,9 @@
 import 'dart:io';
 import 'dart:typed_data';
 import 'dart:async';
-import 'dart:ui';
+import 'package:cbsp_flutter_app/APIsHandler/ModelAPI.dart';
 import 'package:cbsp_flutter_app/APIsHandler/UserAPI.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/rendering.dart';
 import 'package:flutter_webrtc/flutter_webrtc.dart';
 import 'package:gallery_saver_plus/gallery_saver.dart';
 import 'package:path_provider/path_provider.dart';
@@ -12,10 +11,10 @@ import 'package:speech_to_text/speech_recognition_result.dart';
 import 'package:speech_to_text/speech_to_text.dart' as stt;
 import '../services/signalling.service.dart';
 
-
 class CallScreen extends StatefulWidget {
   final String callerId, calleeId;
   final dynamic offer;
+  final bool isCaller;
   final VoidCallback onCallEnd;
 
   const CallScreen({
@@ -23,6 +22,7 @@ class CallScreen extends StatefulWidget {
     this.offer,
     required this.callerId,
     required this.calleeId,
+    required this.isCaller,
     required this.onCallEnd,
   });
 
@@ -31,70 +31,47 @@ class CallScreen extends StatefulWidget {
 }
 
 class _CallScreenState extends State<CallScreen> {
-  // socket instance
   final socket = SignallingService.instance.socket;
-
-  // videoRenderer for localPeer
   final _localRTCVideoRenderer = RTCVideoRenderer();
-
-  // videoRenderer for remotePeer
   final _remoteRTCVideoRenderer = RTCVideoRenderer();
-
-  // mediaStream for localPeer
   MediaStream? _localStream;
-
-  // RTC peer connection
   RTCPeerConnection? _rtcPeerConnection;
-
-  // list of rtcCandidates to be sent over signalling
   List<RTCIceCandidate> rtcIceCadidates = [];
-
-  // media status
   bool isAudioOn = true, isVideoOn = true, isFrontCameraSelected = true;
-
-  // Speech to text
   stt.SpeechToText _speechToText = stt.SpeechToText();
   bool _speechEnabled = false;
   String _transcribedText = '';
   String? _callerName;
   String? _calleeName;
+  String? _disability;
   final GlobalKey _localRTCVideoRendererKey = GlobalKey();
   Timer? _textClearTimer;
   Timer? _timer;
+  late MediaStreamTrack _localVideoTrack;
+  String _selectedOption = 'W'; 
 
   @override
   void initState() {
     super.initState();
-    _fetchCallerDetails(int.parse(widget.callerId));
-    _fetchCalleeDetails(int.parse(widget.calleeId));
-    // initializing renderers
     _localRTCVideoRenderer.initialize();
     _remoteRTCVideoRenderer.initialize();
 
     socket!.on("transcribedText", (data) {
       String text = data['text'];
-
-      // Handle the transcribed text
       setState(() {
         _transcribedText = "$text";
         _startClearTextTimer();
       });
     });
 
-    // setup Peer Connection
     _setupPeerConnection();
-
-    // Listen for 'endCall' event to end the call
-    socket!.on('endCall', (data) {
+    socket!.on("endCall", (data) {
       _leaveCall();
     });
-
-    // Initialize speech recognition
     _initSpeech();
   }
 
   void _startClearTextTimer() {
-    // Cancel the previous timer if it exists
     _textClearTimer?.cancel();
     _textClearTimer = Timer(Duration(seconds: 10), () {
       setState(() {
@@ -108,6 +85,7 @@ class _CallScreenState extends State<CallScreen> {
       final userDetails = await UserApiHandler.fetchUserDetails(userId);
       setState(() {
         _callerName = userDetails.fname;
+        _disability= userDetails.disabilityType;
       });
     } catch (e) {
       _showErrorMessage("Failed to fetch user details");
@@ -119,6 +97,7 @@ class _CallScreenState extends State<CallScreen> {
       final userDetails = await UserApiHandler.fetchUserDetails(userId);
       setState(() {
         _calleeName = userDetails.fname;
+        _disability= userDetails.disabilityType;
       });
     } catch (e) {
       _showErrorMessage("Failed to fetch user details");
@@ -148,7 +127,6 @@ class _CallScreenState extends State<CallScreen> {
     setState(() {
       _transcribedText = "${result.recognizedWords}";
       _startClearTextTimer();
-      // Send transcribed text to the remote peer
       socket!.emit('transcribedText', {
         'text': _transcribedText,
         'sender': widget.callerId,
@@ -179,7 +157,6 @@ class _CallScreenState extends State<CallScreen> {
   }
 
   _setupPeerConnection() async {
-    // create peer connection
     _rtcPeerConnection = await createPeerConnection({
       'iceServers': [
         {
@@ -191,13 +168,11 @@ class _CallScreenState extends State<CallScreen> {
       ]
     });
 
-    // listen for remotePeer mediaTrack event
     _rtcPeerConnection!.onTrack = (event) {
       _remoteRTCVideoRenderer.srcObject = event.streams[0];
       setState(() {});
     };
 
-    // get localStream
     _localStream = await navigator.mediaDevices.getUserMedia({
       'audio': isAudioOn,
       'video': isVideoOn
@@ -205,27 +180,24 @@ class _CallScreenState extends State<CallScreen> {
           : false,
     });
 
-    // add mediaTrack to peerConnection
+    _localVideoTrack = _localStream!.getVideoTracks().first;
+
     _localStream!.getTracks().forEach((track) {
       _rtcPeerConnection!.addTrack(track, _localStream!);
     });
 
-    // set source for local video renderer
     _localRTCVideoRenderer.srcObject = _localStream;
-    _timer = Timer.periodic(Duration(seconds: 3), (timer) async {
-      await captureFrame();
-    });
     setState(() {});
 
-    // for Incoming call
+    _timer = Timer.periodic(Duration(seconds: 5), (timer) async {
+      await captureFrame();
+    });
+
     if (widget.offer != null) {
-      // listen for Remote IceCandidate
       socket!.on("IceCandidate", (data) {
         String candidate = data["iceCandidate"]["candidate"];
         String sdpMid = data["iceCandidate"]["id"];
         int sdpMLineIndex = data["iceCandidate"]["label"];
-
-        // add iceCandidate
         _rtcPeerConnection!.addCandidate(RTCIceCandidate(
           candidate,
           sdpMid,
@@ -233,32 +205,22 @@ class _CallScreenState extends State<CallScreen> {
         ));
       });
 
-      // set SDP offer as remoteDescription for peerConnection
       await _rtcPeerConnection!.setRemoteDescription(
         RTCSessionDescription(widget.offer["sdp"], widget.offer["type"]),
       );
 
-      // create SDP answer
       RTCSessionDescription answer = await _rtcPeerConnection!.createAnswer();
-
-      // set SDP answer as localDescription for peerConnection
       _rtcPeerConnection!.setLocalDescription(answer);
 
-      // send SDP answer to remote peer over signalling
       socket!.emit("answerCall", {
         "callerId": widget.callerId,
         "sdpAnswer": answer.toMap(),
       });
-    }
-    // for Outgoing Call
-    else {
-      // listen for local iceCandidate and add it to the list of IceCandidate
+    } else {
       _rtcPeerConnection!.onIceCandidate =
           (RTCIceCandidate candidate) => rtcIceCadidates.add(candidate);
 
-      // when call is accepted by remote peer
       socket!.on("callAnswered", (data) async {
-        // set SDP answer as remoteDescription for peerConnection
         await _rtcPeerConnection!.setRemoteDescription(
           RTCSessionDescription(
             data["sdpAnswer"]["sdp"],
@@ -266,7 +228,6 @@ class _CallScreenState extends State<CallScreen> {
           ),
         );
 
-        // send iceCandidate generated to remote peer over signalling
         for (RTCIceCandidate candidate in rtcIceCadidates) {
           socket!.emit("IceCandidate", {
             "calleeId": widget.calleeId,
@@ -279,13 +240,9 @@ class _CallScreenState extends State<CallScreen> {
         }
       });
 
-      // create SDP Offer
       RTCSessionDescription offer = await _rtcPeerConnection!.createOffer();
-
-      // set SDP offer as localDescription for peerConnection
       await _rtcPeerConnection!.setLocalDescription(offer);
 
-      // make a call to remote peer over signalling
       socket!.emit('makeCall', {
         "calleeId": widget.calleeId,
         "sdpOffer": offer.toMap(),
@@ -293,35 +250,60 @@ class _CallScreenState extends State<CallScreen> {
     }
   }
 
+  // Future<void> captureFrame() async {
+  //   try {
+  //     var buffer = await _localVideoTrack.captureFrame();
+  //     Uint8List pngBytes = buffer.asUint8List();
+
+  //     final directory = await getApplicationDocumentsDirectory();
+  //     final imagePath = '${directory.path}/${DateTime.now().millisecondsSinceEpoch}.png';
+  //     final imageFile = File(imagePath);
+  //     await imageFile.writeAsBytes(pngBytes);
+
+  //     await GallerySaver.saveImage(imageFile.path);
+  //     print('Frame saved to gallery: $imagePath');
+  //   } catch (e) {
+  //     print('Error capturing frame: $e');
+  //   }
+  // }
   Future<void> captureFrame() async {
     try {
-      RenderRepaintBoundary boundary = _localRTCVideoRendererKey.currentContext!.findRenderObject() as RenderRepaintBoundary;
-      var image = await boundary.toImage(pixelRatio: 1.0);
-      ByteData? byteData = await image.toByteData(format: ImageByteFormat.png);
-      Uint8List pngBytes = byteData!.buffer.asUint8List();
+      var buffer = await _localVideoTrack.captureFrame();
+      Uint8List pngBytes = buffer.asUint8List();
 
       final directory = await getApplicationDocumentsDirectory();
       final imagePath = '${directory.path}/${DateTime.now().millisecondsSinceEpoch}.png';
       final imageFile = File(imagePath);
       await imageFile.writeAsBytes(pngBytes);
 
-      // Save the captured frame to the gallery
-      await GallerySaver.saveImage(imageFile.path);
-      print('Frame saved to gallery: $imagePath');
+      final result = await ModelAPI.detectAlphabets(imageFile);
+      if(result != null)
+      {
+        setState(() {
+          _transcribedText = '${result['class_name']}';
+          _startClearTextTimer();
+          socket!.emit('transcribedText', {
+            'text': _transcribedText,
+            'sender': widget.callerId,
+            'receiver': widget.calleeId,
+          });
+        });
+      }
+      
     } catch (e) {
-      print('Error capturing frame: $e');
+      print('Error: $e');
     }
   }
 
   _leaveCall() {
-    // Emit 'endCall' event to signal the end of the call
     socket!.emit('endCall', {
       'callerId': widget.callerId,
       'calleeId': widget.calleeId,
     });
-    _stopListening();
+    //_stopListening();
     Navigator.pop(context);
-    widget.onCallEnd();
+    if(!widget.isCaller)
+    {widget.onCallEnd();}
   }
 
   _toggleMic() {
@@ -334,7 +316,6 @@ class _CallScreenState extends State<CallScreen> {
 
   _toggleCamera() {
     isVideoOn = !isVideoOn;
-
     _localStream?.getVideoTracks().forEach((track) {
       track.enabled = isVideoOn;
     });
@@ -351,114 +332,248 @@ class _CallScreenState extends State<CallScreen> {
   }
 
   @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      body: SafeArea(
-        child: Stack(
-          children: [
-            RTCVideoView(
-              _remoteRTCVideoRenderer,
-              objectFit: RTCVideoViewObjectFit.RTCVideoViewObjectFitCover,
-            ),
-            Positioned(
-              right: 20,
-              top: 20,
-              child: SizedBox(
-                height: 150,
-                width: 120,
-                child: RTCVideoView(
-                  _localRTCVideoRenderer,
-                  objectFit: RTCVideoViewObjectFit.RTCVideoViewObjectFitCover,
-                  key: _localRTCVideoRendererKey,
-                ),
+Widget build(BuildContext context) {
+
+  if (widget.isCaller) {
+    _fetchCallerDetails(int.parse(widget.callerId));
+  }
+   else{
+    _fetchCalleeDetails(int.parse(widget.calleeId));
+   } 
+  
+
+  if (_disability == 'Deaf and Mute') {
+    return _deafMuteView();
+  } else{
+    return _blindNormalView();
+  } 
+}
+
+Widget _deafMuteView() {
+  return Scaffold(
+    body: SafeArea(
+      child: Stack(
+        children: [
+          RTCVideoView(
+            _remoteRTCVideoRenderer,
+            objectFit: RTCVideoViewObjectFit.RTCVideoViewObjectFitCover,
+          ),
+          Positioned(
+            right: 20,
+            top: 20,
+            child: SizedBox(
+              height: 150,
+              width: 120,
+              child: RTCVideoView(
+                _localRTCVideoRenderer,
+                objectFit: RTCVideoViewObjectFit.RTCVideoViewObjectFitCover,
               ),
             ),
-            Positioned(
-              bottom: 100, 
-              left: 20,
-              right: 20,
-              child: Container(
-                color: Colors.black54,
-                padding: EdgeInsets.all(10),
+          ),
+          Positioned(
+            bottom: 100,
+            left: 20,
+            right: 20,
+            child: Container(
+              padding: EdgeInsets.all(10),
+              decoration: BoxDecoration(
+                color: Colors.blue, // Ensure this matches the `Container` color
+                borderRadius: BorderRadius.circular(15), // Adjust the radius as needed
+              ),
+              child: Center(
                 child: Text(
                   _transcribedText,
-                  style: TextStyle(color: Colors.white),
+                  style: TextStyle(color: Colors.black),
                 ),
               ),
             ),
-            Positioned(
-              bottom: 0,
-              left: 0,
-              right: 0,
-              child: ClipPath(
-                // clipper: BottomNavBarClipper(),
-                child: BottomAppBar(
-                  height: 75,
-                  color: Colors.blueGrey[900],
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                    children: [
-                      IconButton(
-                        icon: Icon(Icons.switch_camera,
-                            color: Colors.white, size: 30),
-                        onPressed: _switchCamera,
-                      ),
-                      IconButton(
-                        icon: Icon(isVideoOn
-                            ? Icons.videocam
-                            : Icons.videocam_off,
-                            color: Colors.white,
-                            size: 30),
-                        onPressed: _toggleCamera,
-                      ),
-                      IconButton(
-                        icon: Icon(isAudioOn ? Icons.mic : Icons.mic_off,
-                            color: Colors.white, size: 30),
-                        onPressed: _toggleMic,
-                      ),
-                      CircleAvatar(
-                        backgroundColor: Colors.green,
-                        maxRadius: 23,
-                        child: IconButton(
-                          icon: Icon(_speechToText.isNotListening ? Icons.mic_off : Icons.mic,
-                              color: Colors.white, size: 30),
-                          onPressed: _speechToText.isNotListening ? _startListening : _stopListening,
+          ),
+          Positioned(
+            bottom: 0,
+            left: 0,
+            right: 0,
+            child: ClipPath(
+              child: BottomAppBar(
+                height: 75,
+                color: Colors.blueGrey[900],
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                  children: [
+                    IconButton(
+                      icon: Icon(Icons.switch_camera,
+                          color: Colors.white, size: 30),
+                      onPressed: _switchCamera,
+                    ),
+                    IconButton(
+                      icon: Icon(isVideoOn
+                          ? Icons.videocam
+                          : Icons.videocam_off,
+                          color: Colors.white,
+                          size: 30),
+                      onPressed: _toggleCamera,
+                    ),
+                    IconButton(
+                      icon: Icon(isAudioOn ? Icons.mic : Icons.mic_off,
+                          color: Colors.white, size: 30),
+                      onPressed: _toggleMic,
+                    ),
+                    CircleAvatar(
+                      backgroundColor: Colors.green,
+                      maxRadius: 23,
+                      child: PopupMenuButton<String>(
+                        onSelected: (value) {
+                          setState(() {
+                            _selectedOption = value; // Update the selected option
+                          });
+                        },
+                        itemBuilder: (BuildContext context) {
+                          return [
+                            PopupMenuItem<String>(
+                              value: 'W',
+                              child: Text('W'),
+                            ),
+                            PopupMenuItem<String>(
+                              value: 'L',
+                              child: Text('L'),
+                            ),
+                          ];
+                        },
+                        child: Text(
+                          _selectedOption, // Display the selected option
+                          style: TextStyle(color: Colors.white, fontSize: 18),
+                        ),
+                        offset: Offset(0, 40), // Adjust position as needed
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(10),
                         ),
                       ),
-                      CircleAvatar(
-                        backgroundColor: Colors.red,
-                        maxRadius: 23,
-                        child: IconButton(
-                          icon: Icon(Icons.call_end,
-                              color: Colors.white, size: 30),
-                          onPressed: _leaveCall,
-                        ),
+                    ),
+                    CircleAvatar(
+                      backgroundColor: Colors.red,
+                      maxRadius: 23,
+                      child: IconButton(
+                        icon: Icon(Icons.call_end,
+                            color: Colors.white, size: 30),
+                        onPressed: _leaveCall,
                       ),
-                    ],
-                  ),
+                    ),
+                  ],
                 ),
               ),
             ),
-          ],
-        ),
+          ),
+        ],
       ),
-    );
-  }
+    ),
+  );
+}
+
+// View for Blind and Normal
+Widget _blindNormalView() {
+  return Scaffold(
+    body: SafeArea(
+      child: Stack(
+        children: [
+          RTCVideoView(
+            _remoteRTCVideoRenderer,
+            objectFit: RTCVideoViewObjectFit.RTCVideoViewObjectFitCover,
+          ),
+          Positioned(
+            right: 20,
+            top: 20,
+            child: SizedBox(
+              height: 150,
+              width: 120,
+              child: RTCVideoView(
+                _localRTCVideoRenderer,
+                objectFit: RTCVideoViewObjectFit.RTCVideoViewObjectFitCover,
+              ),
+            ),
+          ),
+          Positioned(
+            bottom: 100,
+            left: 20,
+            right: 20,
+            child: Container(
+              padding: EdgeInsets.all(10),
+              decoration: BoxDecoration(
+                color: Colors.blue, 
+                borderRadius: BorderRadius.circular(15), 
+              ),
+              child: Center(
+                child: Text(
+                  _transcribedText,
+                  style: TextStyle(color: Colors.black),
+                ),
+              ),
+            ),
+          ),
+          Positioned(
+            bottom: 0,
+            left: 0,
+            right: 0,
+            child: ClipPath(
+              child: BottomAppBar(
+                height: 75,
+                color: Colors.blueGrey[900],
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                  children: [
+                    IconButton(
+                      icon: Icon(Icons.switch_camera,
+                          color: Colors.white, size: 30),
+                      onPressed: _switchCamera,
+                    ),
+                    IconButton(
+                      icon: Icon(isVideoOn
+                          ? Icons.videocam
+                          : Icons.videocam_off,
+                          color: Colors.white,
+                          size: 30),
+                      onPressed: _toggleCamera,
+                    ),
+                    IconButton(
+                      icon: Icon(isAudioOn ? Icons.mic : Icons.mic_off,
+                          color: Colors.white, size: 30),
+                      onPressed: _toggleMic,
+                    ),
+                    CircleAvatar(
+                      backgroundColor: Colors.green,
+                      maxRadius: 23,
+                      child: IconButton(
+                        icon: Icon(_speechToText.isNotListening ? Icons.mic_off : Icons.mic,
+                            color: Colors.white, size: 30),
+                        onPressed: _speechToText.isNotListening ? _startListening : _stopListening,
+                      ),
+                    ),
+                    CircleAvatar(
+                      backgroundColor: Colors.red,
+                      maxRadius: 23,
+                      child: IconButton(
+                        icon: Icon(Icons.call_end,
+                            color: Colors.white, size: 30),
+                        onPressed: _leaveCall,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    ),
+  );
+}
 
   @override
   void dispose() {
-    // Dispose of resources and cancel ongoing operations
     _localRTCVideoRenderer.dispose();
     _remoteRTCVideoRenderer.dispose();
     _localStream?.dispose();
     _rtcPeerConnection?.dispose();
-
-    // Dispose of the speech recognition
     _speechToText.stop();
-
-    // Cancel the text clear timer if it exists
     _textClearTimer?.cancel();
-
     super.dispose();
   }
 }

@@ -1,5 +1,4 @@
 import 'dart:math';
-
 import 'package:cbsp_flutter_app/CustomWidget/GlobalVariables.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';

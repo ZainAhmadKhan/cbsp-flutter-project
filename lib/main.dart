@@ -1,7 +1,6 @@
 import 'package:cbsp_flutter_app/PreLoginScreens/SplashScreen.dart';
 import 'package:cbsp_flutter_app/Provider/CheckCallStatusProvider.dart';
 import 'package:cbsp_flutter_app/Provider/UserIdProvider.dart';
-import 'package:cbsp_flutter_app/VideoCall/screens/CapturePicture.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter/material.dart';
 
@@ -36,8 +35,6 @@ class MyApp extends StatelessWidget {
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.blue),
         useMaterial3: true,
       ),
-      // home: Dashboard(),
-      // home: CameraScreen(),
       home: SplashScreen(),
       debugShowCheckedModeBanner: false,
     );

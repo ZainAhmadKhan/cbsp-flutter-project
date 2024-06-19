@@ -126,6 +126,7 @@ class _SendingCallScreenState extends State<SendingCallScreen> {
           builder: (_) => CallScreen(
             callerId: widget.callerId,
             calleeId: widget.calleeId,
+            isCaller: true,
             offer: widget.offer,
             onCallEnd: _handleCallEnd,
           ),
@@ -167,6 +168,7 @@ class _SendingCallScreenState extends State<SendingCallScreen> {
           ),
         ],
       ),
+      
       bottomNavigationBar: ClipPath(
         child: BottomAppBar(
           height: bottomBarHeight,

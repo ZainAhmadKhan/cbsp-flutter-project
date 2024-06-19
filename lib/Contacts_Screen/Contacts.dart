@@ -33,28 +33,30 @@ class _ContactsState extends State<Contacts> {
     int uid = userIdProvider.userId;
     _fetchContacts(uid);
     _loadPinnedMutedAndBlockedContacts();
-    _setupIncomingCallListener();
-    SignallingService.instance.socket!.on('endCall', (data) {
-      _leaveCall();
-    });
+    _incomingCallListener();
+    _callEndListener();
   }
 
-  void _setupIncomingCallListener() {
+  void _incomingCallListener() {
     SignallingService.instance.socket!.on("newCall", (data) {
       if (mounted) {
-        // Set SDP Offer of incoming call
         setState(() {
           incomingSDPOffer = data;
           _playRingtone();
         });
-        
-        // You can navigate to the call screen automatically here if needed
-        // _receiveCall(
-        //   callerId: data["callerId"],
-        //   calleeId: uid.toString(),
-        //   offer: data["sdpOffer"],
-        // );
-
+      }
+    });
+  }
+  void _callEndListener() {
+    SignallingService.instance.socket!.on('endCall', (data) {
+      if (mounted) {
+        setState(() {
+          incomingSDPOffer = null;
+          socket!.on('disconnect', (_) {
+            _showMessage("Call Ended");
+          });
+          _stopRingtone();
+        });
       }
     });
   }
@@ -211,7 +213,7 @@ class _ContactsState extends State<Contacts> {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setStringList('blockedContacts', blockedContacts.map((e) => e.toString()).toList());
   }
-  _joinCall({
+  _sendCall({
     required String callerId,
     required String calleeId,
     dynamic offer,
@@ -222,6 +224,25 @@ class _ContactsState extends State<Contacts> {
         builder: (_) => CallScreen(
           callerId: callerId,
           calleeId: calleeId,
+          isCaller: true,
+          offer: offer,
+          onCallEnd: _handleCallEnd,
+        ),
+      ),
+    );
+  }
+  _receiveCall({
+    required String callerId,
+    required String calleeId,
+    dynamic offer,
+  }) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => CallScreen(
+          callerId: callerId,
+          calleeId: calleeId,
+          isCaller: false,
           offer: offer,
           onCallEnd: _handleCallEnd,
         ),
@@ -238,6 +259,7 @@ class _ContactsState extends State<Contacts> {
     socket!.on('disconnect', (_) {
       _showMessage("Call Ended");
     });
+    _stopRingtone();
   }
    void _showMessage(String message) {
     ScaffoldMessenger.of(context).showSnackBar(
@@ -269,11 +291,9 @@ class _ContactsState extends State<Contacts> {
                         icon: const Icon(Icons.call_end),
                         color: Colors.redAccent,
                         onPressed: () {
-                          _leaveCall;
                           setState(() => incomingSDPOffer = null);
                           // Stop ringtone when call is declined
-                          _stopRingtone();
-
+                          _leaveCall;
                         },
                       ),
                       IconButton(
@@ -283,7 +303,7 @@ class _ContactsState extends State<Contacts> {
                           _stopRingtone();
                           final userIdProvider = Provider.of<UserIdProvider>(context, listen: false);
                           int uid = userIdProvider.userId;
-                          _joinCall(
+                          _receiveCall(
                             callerId: incomingSDPOffer["callerId"]!,
                             calleeId: uid.toString(),
                             offer: incomingSDPOffer["sdpOffer"],
@@ -368,7 +388,7 @@ class _ContactsState extends State<Contacts> {
                               //     ),
                               //   ),
                               // );
-                              _joinCall(
+                              _sendCall(
                                 callerId: uid.toString(),
                                 calleeId: contact.id.toString(),
                               );
