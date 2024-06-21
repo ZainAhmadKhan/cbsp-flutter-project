@@ -1,5 +1,7 @@
+import 'package:cbsp_flutter_app/ButtonsAndVariables/Buttons.dart';
 import 'package:cbsp_flutter_app/CustomSigns/CustomSigns.dart';
 import 'package:cbsp_flutter_app/Lessons_Screen/Beginner_Screen/Beginner_Screen.dart';
+import 'package:cbsp_flutter_app/Lessons_Screen/CustomSign/CustomSign.dart';
 import 'package:cbsp_flutter_app/Lessons_Screen/Expert_Screen/Expert_Screen.dart';
 import 'package:cbsp_flutter_app/Lessons_Screen/Favourites_Screen/Favouites_Screen.dart';
 import 'package:cbsp_flutter_app/Lessons_Screen/Intermediate_Screen/Intermediate_Screen.dart';
@@ -120,6 +122,23 @@ class _LessonsState extends State<Lessons> {
             },
           ),
         ),
+        ElevatedButton(
+        onPressed: ()
+        {
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (context) => CustomSign()),
+          );    
+        },
+        style: ElevatedButton.styleFrom(
+          backgroundColor: Colors.blue, // Fixed background color
+          minimumSize: Size(300, 50),
+        ),
+        child: Text(
+          "+ Add Custom Sign",
+          style: TextStyle(color: Colors.white, fontSize: 18), // Fixed text color
+        ),
+      ),
 
         SizedBox(height: 50,)
       ],

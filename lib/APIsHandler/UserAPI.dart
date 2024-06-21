@@ -198,7 +198,32 @@ class UserApiHandler {
       return false;
     }
   }
+
+  static Future<bool> updateOnlineStatus(int userId, int onlineStatus) async {
+    final url = Uri.parse('$baseUrl/$userId/online-status?online_status=$onlineStatus'); 
+
+   try {
+      final response = await http.put(
+        url,
+        headers: <String, String>{
+          'Content-Type': 'application/json; charset=UTF-8',
+        },
+      );
+
+      if (response.statusCode == 200) {
+        print('User online status updated successfully.');
+        return true;
+      } else {
+        print('Failed to update user online status. Status code: ${response.statusCode}');
+        return false;
+      }
+    } catch (e) {
+      print('Error updating user online status: $e');
+      return false;
+    }
+  }
 }
+
 
 class UserDetails {
   final int id;

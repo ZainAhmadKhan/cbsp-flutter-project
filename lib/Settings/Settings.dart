@@ -1,12 +1,14 @@
 import 'package:cbsp_flutter_app/APIsHandler/UserAPI.dart';
 import 'package:cbsp_flutter_app/CustomWidget/GlobalVariables.dart';
 import 'package:cbsp_flutter_app/LoginScreen/Login.dart';
+import 'package:cbsp_flutter_app/Provider/UserIdProvider.dart';
 import 'package:cbsp_flutter_app/Settings/AboutScreen.dart';
 import 'package:cbsp_flutter_app/Settings/GeneralScreen.dart';
 import 'package:cbsp_flutter_app/Settings/NotificationScreen.dart';
 import 'package:cbsp_flutter_app/Settings/ProfileSettingsScreen.dart';
 import 'package:cbsp_flutter_app/Settings/TermsAndConditionScreen.dart';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
 class Settings extends StatefulWidget {
    final int userId;
@@ -84,10 +86,15 @@ class _SettingsState extends State<Settings> {
                         ? NetworkImage(profileImage)
                         : AssetImage('assets/person.png') as ImageProvider,
                   ),
-                  SizedBox(width: 20.0),
+                  SizedBox(width: 5.0),
                   Text(
                     '${user?.fname} ${user?.lname}', // Display user's full name
                     style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                  ),
+                  SizedBox(width: 5.0),
+                  CircleAvatar(
+                    radius: 5,
+                    backgroundColor: user?.onlineStatus == 0 ? Colors.green : Colors.grey,
                   ),
                   SizedBox(width: 20.0),
                   IconButton(
@@ -157,11 +164,14 @@ class _SettingsState extends State<Settings> {
             SizedBox(height: 20.0),
             // Logout Button
             ElevatedButton.icon(
-              onPressed: () {
+              onPressed: () async{
+                final userIdProvider = Provider.of<UserIdProvider>(context, listen: false);
+                int uid = userIdProvider.userId;
+                await UserApiHandler.updateOnlineStatus(uid,1);
                 Navigator.push(
-            context,
-            MaterialPageRoute(builder: (context) => LoginScreen()),
-          );
+                  context,
+                  MaterialPageRoute(builder: (context) => LoginScreen()),
+                );
               },
               icon: Icon(Icons.logout),
               label: Text('Logout'),

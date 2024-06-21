@@ -120,18 +120,18 @@ class _UserProfileState extends State<UserProfile> {
               ),
               SizedBox(width: 10),
               if (user?.disabilityType != null) ...[
-                if (user!.disabilityType.toLowerCase() == 'blind') ...[
+                if (user!.disabilityType == 'Blind') ...[
                   Icon(Icons.visibility_off, color: Colors.black),
                   SizedBox(width: 5),
                   Text('Blind'),
-                ] else if (user!.disabilityType.toLowerCase() == 'deaf and mute') ...[
+                ] else if (user!.disabilityType == 'Deaf and Mute') ...[
                   Icon(Icons.hearing_disabled, color: Colors.black),
                   SizedBox(width: 5),
                   Text('Deaf and Dumb'),
                 ] else ...[
                   Icon(Icons.person, color: Colors.black),
                   SizedBox(width: 5),
-                  Text('Normal Person'),
+                  Text('General'),
                 ],
               ],
             ],
@@ -190,7 +190,7 @@ class _UserProfileState extends State<UserProfile> {
                         SizedBox(width: 40),
                         CircleAvatar(
                           radius: 5,
-                          backgroundColor: callLogs[index].onlineStatus == 1 ? Colors.green : Colors.grey,
+                          backgroundColor: callLogs[index].onlineStatus == 0 ? Colors.green : Colors.grey,
                         ),
                         SizedBox(width: 10),
                         GestureDetector(

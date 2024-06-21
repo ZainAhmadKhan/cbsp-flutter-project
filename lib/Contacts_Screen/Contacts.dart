@@ -1,5 +1,6 @@
 import 'package:audioplayers/audioplayers.dart';
 import 'package:cbsp_flutter_app/APIsHandler/ContactsAPI.dart';
+import 'package:cbsp_flutter_app/APIsHandler/UserAPI.dart';
 import 'package:cbsp_flutter_app/Contacts_Screen/ShowAllContacts.dart';
 import 'package:cbsp_flutter_app/Contacts_Screen/UserProfile.dart';
 import 'package:cbsp_flutter_app/CustomWidget/GlobalVariables.dart';
@@ -68,6 +69,7 @@ class _ContactsState extends State<Contacts> {
 
   Future<void> _fetchContacts(int userid) async {
     try {
+      await UserApiHandler.updateOnlineStatus(userid,0);
       final fetchedContacts = await ContactApiHandler.getUserContacts(userid);
       setState(() {
         contacts = fetchedContacts;
@@ -250,11 +252,8 @@ class _ContactsState extends State<Contacts> {
     );
   }
   _leaveCall() {
-    final userIdProvider = Provider.of<UserIdProvider>(context, listen: false);
-    int uid = userIdProvider.userId;
     socket!.emit('endCall', {
       'callerId': incomingSDPOffer["callerId"]!,
-      'calleeId': uid.toString(),
     });
     socket!.on('disconnect', (_) {
       _showMessage("Call Ended");
@@ -291,6 +290,7 @@ class _ContactsState extends State<Contacts> {
                         icon: const Icon(Icons.call_end),
                         color: Colors.redAccent,
                         onPressed: () {
+                          _stopRingtone();
                           setState(() => incomingSDPOffer = null);
                           // Stop ringtone when call is declined
                           _leaveCall;
@@ -372,7 +372,7 @@ class _ContactsState extends State<Contacts> {
                           SizedBox(width: 10),
                           CircleAvatar(
                             radius: 5,
-                            backgroundColor: contact.onlineStatus == 1 ? Colors.green : Colors.grey,
+                            backgroundColor: contact.onlineStatus == 0 ? Colors.green : Colors.grey,
                           ),
                           SizedBox(width: 20),
                           GestureDetector(

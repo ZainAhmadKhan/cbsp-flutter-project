@@ -102,7 +102,7 @@ class _CallLogsState extends State<CallLogs> {
                           SizedBox(width: 40),
                           CircleAvatar(
                             radius: 5,
-                            backgroundColor: allCallLogs[index].onlineStatus == 1 ? Colors.green : Colors.grey,
+                            backgroundColor: allCallLogs[index].onlineStatus == 0 ? Colors.green : Colors.grey,
                           ),
                           SizedBox(width: 10),
                           GestureDetector(

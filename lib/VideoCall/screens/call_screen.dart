@@ -37,7 +37,7 @@ class _CallScreenState extends State<CallScreen> {
   MediaStream? _localStream;
   RTCPeerConnection? _rtcPeerConnection;
   List<RTCIceCandidate> rtcIceCadidates = [];
-  bool isAudioOn = true, isVideoOn = true, isFrontCameraSelected = true;
+  bool isAudioOn = false, isVideoOn = true, isFrontCameraSelected = true;
   stt.SpeechToText _speechToText = stt.SpeechToText();
   bool _speechEnabled = false;
   String _transcribedText = '';
@@ -66,14 +66,15 @@ class _CallScreenState extends State<CallScreen> {
 
     _setupPeerConnection();
     socket!.on("endCall", (data) {
-      _leaveCall();
+      // _leaveCall();
+      Navigator.pop(context);
     });
     _initSpeech();
   }
 
   void _startClearTextTimer() {
     _textClearTimer?.cancel();
-    _textClearTimer = Timer(Duration(seconds: 10), () {
+    _textClearTimer = Timer(Duration(seconds: 5), () {
       setState(() {
         _transcribedText = '';
       });
@@ -127,11 +128,22 @@ class _CallScreenState extends State<CallScreen> {
     setState(() {
       _transcribedText = "${result.recognizedWords}";
       _startClearTextTimer();
-      socket!.emit('transcribedText', {
+      if(widget.isCaller)
+      {
+        socket!.emit('transcribedText', {
         'text': _transcribedText,
         'sender': widget.callerId,
         'receiver': widget.calleeId,
       });
+      }
+      else
+      {
+         socket!.emit('transcribedText', {
+        'text': _transcribedText,
+        'sender': widget.calleeId,
+        'receiver': widget.callerId,
+      }); 
+      }
     });
   }
 
@@ -189,7 +201,7 @@ class _CallScreenState extends State<CallScreen> {
     _localRTCVideoRenderer.srcObject = _localStream;
     setState(() {});
 
-    _timer = Timer.periodic(Duration(seconds: 5), (timer) async {
+    _timer = Timer.periodic(Duration(seconds: 3), (timer) async {
       await captureFrame();
     });
 
@@ -250,56 +262,75 @@ class _CallScreenState extends State<CallScreen> {
     }
   }
 
-  // Future<void> captureFrame() async {
-  //   try {
-  //     var buffer = await _localVideoTrack.captureFrame();
-  //     Uint8List pngBytes = buffer.asUint8List();
-
-  //     final directory = await getApplicationDocumentsDirectory();
-  //     final imagePath = '${directory.path}/${DateTime.now().millisecondsSinceEpoch}.png';
-  //     final imageFile = File(imagePath);
-  //     await imageFile.writeAsBytes(pngBytes);
-
-  //     await GallerySaver.saveImage(imageFile.path);
-  //     print('Frame saved to gallery: $imagePath');
-  //   } catch (e) {
-  //     print('Error capturing frame: $e');
-  //   }
-  // }
   Future<void> captureFrame() async {
-    try {
-      var buffer = await _localVideoTrack.captureFrame();
-      Uint8List pngBytes = buffer.asUint8List();
+  try {
+    var buffer = await _localVideoTrack.captureFrame();
+    Uint8List pngBytes = buffer.asUint8List();
 
-      final directory = await getApplicationDocumentsDirectory();
-      final imagePath = '${directory.path}/${DateTime.now().millisecondsSinceEpoch}.png';
-      final imageFile = File(imagePath);
-      await imageFile.writeAsBytes(pngBytes);
+    final directory = await getApplicationDocumentsDirectory();
+    final imagePath = '${directory.path}/${DateTime.now().millisecondsSinceEpoch}.png';
+    final imageFile = File(imagePath);
+    await imageFile.writeAsBytes(pngBytes);
+    final Map<String, dynamic>? result;
 
-      final result = await ModelAPI.detectAlphabets(imageFile);
-      if(result != null)
-      {
-        setState(() {
-          _transcribedText = '${result['class_name']}';
-          _startClearTextTimer();
-          socket!.emit('transcribedText', {
-            'text': _transcribedText,
-            'sender': widget.callerId,
-            'receiver': widget.calleeId,
-          });
-        });
-      }
-      
-    } catch (e) {
-      print('Error: $e');
+    if (_selectedOption == "W") {
+      result = await ModelAPI.detectAlphabets(imageFile);
+    } else {
+      result = await ModelAPI.detectPhrases(imageFile);
     }
+
+    if (result != null) {
+      setState(() {
+        if (_selectedOption == "P") {
+         _transcribedText = '${result!['label']}';
+        } else {
+          _transcribedText = '${result!['class_name']}';
+        }
+        _startClearTextTimer();
+        if(widget.isCaller)
+      {
+        socket!.emit('transcribedText', {
+        'text': _transcribedText,
+        'sender': widget.callerId,
+        'receiver': widget.calleeId,
+      });
+      }
+      else
+      {
+         socket!.emit('transcribedText', {
+        'text': _transcribedText,
+        'sender': widget.calleeId,
+        'receiver': widget.callerId,
+      }); 
+      }
+      });
+    } else {
+      print('Result is null');
+    }
+  } catch (e) {
+    print('Error: $e');
   }
+}
 
   _leaveCall() {
-    socket!.emit('endCall', {
+
+
+
+    if(widget.isCaller){
+      socket!.emit('endCall', {
       'callerId': widget.callerId,
       'calleeId': widget.calleeId,
     });
+    }
+    else
+    {
+      socket!.emit('endCall', {
+      'callerId': widget.calleeId,
+      'calleeId': widget.callerId,
+    });
+    }
+    
+    
     //_stopListening();
     Navigator.pop(context);
     if(!widget.isCaller)
@@ -331,7 +362,7 @@ class _CallScreenState extends State<CallScreen> {
     setState(() {});
   }
 
-  @override
+@override
 Widget build(BuildContext context) {
 
   if (widget.isCaller) {
@@ -399,24 +430,7 @@ Widget _deafMuteView() {
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                   children: [
-                    IconButton(
-                      icon: Icon(Icons.switch_camera,
-                          color: Colors.white, size: 30),
-                      onPressed: _switchCamera,
-                    ),
-                    IconButton(
-                      icon: Icon(isVideoOn
-                          ? Icons.videocam
-                          : Icons.videocam_off,
-                          color: Colors.white,
-                          size: 30),
-                      onPressed: _toggleCamera,
-                    ),
-                    IconButton(
-                      icon: Icon(isAudioOn ? Icons.mic : Icons.mic_off,
-                          color: Colors.white, size: 30),
-                      onPressed: _toggleMic,
-                    ),
+
                     CircleAvatar(
                       backgroundColor: Colors.green,
                       maxRadius: 23,
@@ -433,8 +447,8 @@ Widget _deafMuteView() {
                               child: Text('W'),
                             ),
                             PopupMenuItem<String>(
-                              value: 'L',
-                              child: Text('L'),
+                              value: 'P',
+                              child: Text('P'),
                             ),
                           ];
                         },

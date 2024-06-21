@@ -24,7 +24,7 @@ class _ProfileSettingScreenState extends State<ProfileSettingScreen> {
   TextEditingController currentPasswordController = TextEditingController();
   TextEditingController newPasswordController = TextEditingController();
   TextEditingController confirmPasswordController = TextEditingController();
-  String disabilityValue = 'Normal Person';
+  String disabilityValue = 'General';
   File? _selectedImage;
   UserDetails? user;
 
@@ -182,7 +182,7 @@ class _ProfileSettingScreenState extends State<ProfileSettingScreen> {
                   disabilityValue = value!;
                 });
               },
-              items: ['Normal Person', 'Blind', 'Deaf and Mute']
+              items: ['General', 'Blind', 'Deaf and Mute']
                   .map<DropdownMenuItem<String>>(
                     (String value) => DropdownMenuItem<String>(
                       value: value,
