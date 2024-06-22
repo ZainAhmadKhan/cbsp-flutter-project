@@ -1,2 +1,2 @@
-const Url = 'http://192.168.0.106:8000';
-const socketUrl = 'http://192.168.0.106:5000';
+const Url = 'http://192.168.43.55:8000';
+const socketUrl = 'http://192.168.43.55:5000';

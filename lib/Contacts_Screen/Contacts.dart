@@ -5,6 +5,7 @@ import 'package:cbsp_flutter_app/Contacts_Screen/ShowAllContacts.dart';
 import 'package:cbsp_flutter_app/Contacts_Screen/UserProfile.dart';
 import 'package:cbsp_flutter_app/CustomWidget/GlobalVariables.dart';
 import 'package:cbsp_flutter_app/VideoCall/screens/CallIncomingScreen.dart';
+import 'package:cbsp_flutter_app/VideoCall/screens/Chat_Screen.dart';
 import 'package:cbsp_flutter_app/VideoCall/screens/call_screen.dart';
 import 'package:cbsp_flutter_app/VideoCall/services/signalling.service.dart';
 import 'package:flutter/material.dart';
@@ -24,6 +25,7 @@ class _ContactsState extends State<Contacts> {
   Set<int> mutedContacts = {};
   Set<int> blockedContacts = {};
   dynamic incomingSDPOffer;
+  dynamic incomingChatSDPOffer;
   final AudioPlayer _audioPlayer = AudioPlayer();
   final socket = SignallingService.instance.socket;
  
@@ -35,6 +37,7 @@ class _ContactsState extends State<Contacts> {
     _fetchContacts(uid);
     _loadPinnedMutedAndBlockedContacts();
     _incomingCallListener();
+    _incomingCallChatListener();
     _callEndListener();
   }
 
@@ -43,6 +46,17 @@ class _ContactsState extends State<Contacts> {
       if (mounted) {
         setState(() {
           incomingSDPOffer = data;
+          _playRingtone();
+        });
+      }
+    });
+  }
+
+  void _incomingCallChatListener() {
+    SignallingService.instance.socket!.on("newChatCall", (data) {
+      if (mounted) {
+        setState(() {
+          incomingChatSDPOffer = data;
           _playRingtone();
         });
       }
@@ -251,6 +265,23 @@ class _ContactsState extends State<Contacts> {
       ),
     );
   }
+  _receiveChatCall({
+    required String caller1Id,
+    required String caller2Id,
+    required String calleeId,
+  }) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => ChatScreen(
+          caller1Id: caller1Id,
+          caller2Id: caller2Id,
+          calleeId: calleeId,
+          onCallEnd: _handleCallEnd,
+        ),
+      ),
+    );
+  }
   _leaveCall() {
     socket!.emit('endCall', {
       'callerId': incomingSDPOffer["callerId"]!,
@@ -308,7 +339,6 @@ class _ContactsState extends State<Contacts> {
                             calleeId: uid.toString(),
                             offer: incomingSDPOffer["sdpOffer"],
                           );
-                          // Stop ringtone when call is accepted
                         },
                       )
                     ],
@@ -330,6 +360,67 @@ class _ContactsState extends State<Contacts> {
                       ),
                     );
                   },
+                ),
+                if (incomingChatSDPOffer != null)
+                ListTile(
+                  title: Text(
+                    "Incoming Call from ${incomingChatSDPOffer["caller1Id"]} and ${incomingChatSDPOffer["caller2Id"]}",
+                  ),
+                  trailing: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      IconButton(
+                        icon: const Icon(Icons.call_end),
+                        color: Colors.redAccent,
+                        onPressed: () {
+                          _stopRingtone();
+                          setState(() => incomingChatSDPOffer = null);
+                          // _leaveCall;
+                        },
+                      ),
+                      IconButton(
+                        icon: const Icon(Icons.call),
+                        color: Colors.greenAccent,
+                        onPressed: () {
+                          _stopRingtone();
+                          final userIdProvider = Provider.of<UserIdProvider>(context, listen: false);
+                          int uid = userIdProvider.userId;
+                           Navigator.push(
+                              context,
+                              MaterialPageRoute(builder: (context) => ChatScreen(
+                                caller1Id: incomingChatSDPOffer["caller1Id"],
+                                caller2Id: incomingChatSDPOffer["caller2Id"],
+                                calleeId: uid.toString(),
+                                onCallEnd: _handleCallEnd,
+                              )),
+                            );
+                          // _receiveChatCall(
+                          //   caller1Id: incomingChatSDPOffer["caller1Id"]!,
+                          //   caller2Id: incomingChatSDPOffer["caller2Id"]!,
+                          //   calleeId: uid.toString(),
+                          //   offer: incomingSDPOffer["sdpOffer"],
+                          // );
+                        },
+                      )
+                    ],
+                  ),
+                  // onTap: ()
+                  // {
+                  //   final userIdProvider = Provider.of<UserIdProvider>(context, listen: false);
+                  //   int uid = userIdProvider.userId;
+                  //   _stopRingtone();
+                  //   Navigator.push(
+                  //     context,
+                  //     MaterialPageRoute(
+                  //       builder: (_) => CallIncomingScreen(
+                  //         callerId: incomingSDPOffer["callerId"]!,
+                  //         calleeId: uid.toString(),
+                  //         offer: incomingSDPOffer["sdpOffer"],
+                  //         onCallEnd: _handleCallEnd,
+                  //       ),
+                  //     ),
+                  //   );
+                  // },
                 ),
               Container(
                 height: MediaQuery.of(context).size.height * 0.8,
@@ -379,15 +470,6 @@ class _ContactsState extends State<Contacts> {
                             onTap: () {
                               final userIdProvider = Provider.of<UserIdProvider>(context, listen: false);
                               int uid = userIdProvider.userId;
-                              // Navigator.push(
-                              //   context,
-                              //   MaterialPageRoute(
-                              //     builder: (_) => SendingCallScreen(
-                              //       callerId: uid.toString(),
-                              //       calleeId: contact.id.toString(),
-                              //     ),
-                              //   ),
-                              // );
                               _sendCall(
                                 callerId: uid.toString(),
                                 calleeId: contact.id.toString(),

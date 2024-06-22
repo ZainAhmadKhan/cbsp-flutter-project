@@ -46,6 +46,7 @@ dependencies:
   gallery_saver_plus: ^3.0.1
   camera: ^0.10.5+9
   path: ^1.8.1
+  flutter_tts: ^4.0.0
 
 
 
@@ -86,6 +87,55 @@ flutter:
       - assets/mp3_files/samsung_galaxy.mp3
       - assets/Images/Words.png
       - assets/Images/Alphabets.png
+      - assets/gestures/A-ASL.gif
+      - assets/gestures/B-ASL.gif
+      - assets/gestures/C-ASL.gif
+      - assets/gestures/D-ASL.gif
+      - assets/gestures/E-ASL.gif
+      - assets/gestures/F-ASL.gif
+      - assets/gestures/I-ASL.gif
+      - assets/gestures/J-ASL.png
+      - assets/gestures/K-ASL.gif
+      - assets/gestures/L-ASL.gif
+      - assets/gestures/M-ASL.gif
+      - assets/gestures/O-ASL.gif
+      - assets/gestures/P-ASL.png
+      - assets/gestures/Q-ASL.gif
+      - assets/gestures/R-ASL.gif
+      - assets/gestures/S-ASL.gif
+      - assets/gestures/T-ASL.gif
+      - assets/gestures/U-ASL.gif
+      - assets/gestures/V-ASL.gif
+      - assets/gestures/W-ASL.gif
+      - assets/gestures/X-ASL.gif
+      - assets/gestures/Y-ASL.gif
+      - assets/gestures/Z-ASL.gif
+      - assets/gestures/hello.gif
+      - assets/gestures/iloveyou.gif
+      - assets/gestures/cool.gif
+      - assets/gestures/deafanddumb.gif
+      - assets/gestures/dearmomthankyousomuch.gif
+      - assets/gestures/happy.gif
+      - assets/gestures/happyfathersday.gif
+      - assets/gestures/howareyou.gif
+      - assets/gestures/iamfine.gif
+      - assets/gestures/iamlearningsignlanguage.gif
+      - assets/gestures/keepcalmandstayhome.gif
+      - assets/gestures/kiss.gif
+      - assets/gestures/me.gif
+      - assets/gestures/nicetomeetyou.gif
+      - assets/gestures/no.gif
+      - assets/gestures/okay.gif
+      - assets/gestures/please.gif
+      - assets/gestures/sorry.gif
+      - assets/gestures/super.gif
+      - assets/gestures/thankyou.gif
+      - assets/gestures/tryagain.gif
+      - assets/gestures/understand.gif
+      - assets/gestures/whereareyoufrom.gif
+      - assets/gestures/wonderful.gif
+      - assets/gestures/yes.gif
+      - assets/gestures/you.gif
 
 
   # The following line ensures that the Material Icons font is
