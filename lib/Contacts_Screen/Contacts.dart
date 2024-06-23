@@ -283,8 +283,11 @@ class _ContactsState extends State<Contacts> {
     );
   }
   _leaveCall() {
+    final userIdProvider = Provider.of<UserIdProvider>(context, listen: false);
+    int uid = userIdProvider.userId;
     socket!.emit('endCall', {
-      'callerId': incomingSDPOffer["callerId"]!,
+      'callerId': incomingSDPOffer["callerId"],
+      'calleeId': uid.toString(),
     });
     socket!.on('disconnect', (_) {
       _showMessage("Call Ended");

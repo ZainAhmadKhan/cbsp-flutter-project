@@ -46,6 +46,7 @@ class _CallScreenState extends State<CallScreen> {
   stt.SpeechToText _speechToText = stt.SpeechToText();
   bool _speechEnabled = false;
   String _transcribedText = '';
+  String _chatUserID = '';
   String? _callerName;
   String? _calleeName;
   String? _disability;
@@ -58,6 +59,9 @@ class _CallScreenState extends State<CallScreen> {
   Timer? _ImageTimer;
   String? _currentAsset;
   dynamic incomingSDPOffer;
+  Offset _localViewOffset = Offset(20, 20);
+  Offset _notifierOffset = Offset(20, 150);
+  UserDetails? _chatUserDetail;
 
   @override
   void initState() {
@@ -65,11 +69,18 @@ class _CallScreenState extends State<CallScreen> {
     _localRTCVideoRenderer.initialize();
     _remoteRTCVideoRenderer.initialize();
 
+  if (widget.isCaller) {
+    _fetchCallerDetails(int.parse(widget.callerId));
+  }
+   else{
+    _fetchCalleeDetails(int.parse(widget.calleeId));
+  } 
+
     socket!.on("transcribedText", (data) {
       String text = data['text'];
       setState(() {
         _transcribedText = "$text";
-        if(_disability=="Blind")
+        if(_disability=="Blind" || _disability=="General")
         {
           _textToSpeechService.speak(_transcribedText);
         }
@@ -103,6 +114,22 @@ class _CallScreenState extends State<CallScreen> {
       // _leaveCall();
       Navigator.pop(context);
     });
+
+    socket!.on("notifyUser1", (data) {
+      String calleeId = data['calleeId'];
+      setState(() {
+        _chatUserID = "$calleeId";
+      });
+      _fetchChatUserDetails(int.parse(_chatUserID));
+    });
+    socket!.on("notifyUser2", (data) {
+      String calleeId = data['calleeId'];
+      setState(() {
+        _chatUserID = "$calleeId";
+      });
+      _fetchChatUserDetails(int.parse(_chatUserID));
+    });
+
     _initSpeech();
   }
 
@@ -150,6 +177,16 @@ class _CallScreenState extends State<CallScreen> {
       });
     } catch (e) {
       _showErrorMessage("Failed to fetch user details");
+    }
+  }
+  Future<void> _fetchChatUserDetails(int userId) async {
+    try {
+      final userDetails = await UserApiHandler.fetchUserDetails(userId);
+      setState(() {
+        _chatUserDetail=userDetails;
+      });
+    } catch (e) {
+      _showErrorMessage("Failed to fetch Caller 1 details");
     }
   }
 
@@ -249,9 +286,11 @@ class _CallScreenState extends State<CallScreen> {
     _localRTCVideoRenderer.srcObject = _localStream;
     setState(() {});
 
+    if(_disability == 'Deaf and Mute'){
     _timer = Timer.periodic(Duration(seconds: 3), (timer) async {
       await captureFrame();
     });
+    }
 
     if (widget.offer != null) {
       socket!.on("IceCandidate", (data) {
@@ -415,22 +454,18 @@ class _CallScreenState extends State<CallScreen> {
       _showErrorMessage("No Contacts Load Error!");
     }
   }
-    void _handleCallEnd() {
-      setState(() {
-        incomingSDPOffer = null;
-      });
-    }
+  void _handleCallEnd() {
+    setState(() {
+      incomingSDPOffer = null;
+    });
+  }
+   String get chatUserProfileImage {
+    String imageUrl = '$Url/profile_pictures/';
+    return _chatUserDetail != null ? imageUrl + _chatUserDetail!.profilePicture : 'assets/person.png';
+  }
 
 @override
 Widget build(BuildContext context) {
-
-  if (widget.isCaller) {
-    _fetchCallerDetails(int.parse(widget.callerId));
-  }
-   else{
-    _fetchCalleeDetails(int.parse(widget.calleeId));
-   } 
-  
 
   if (_disability == 'Deaf and Mute') {
     return _deafMuteView();
@@ -449,14 +484,30 @@ Widget _deafMuteView() {
             objectFit: RTCVideoViewObjectFit.RTCVideoViewObjectFitCover,
           ),
           Positioned(
-            right: 20,
-            top: 20,
-            child: SizedBox(
-              height: 150,
-              width: 120,
-              child: RTCVideoView(
-                _localRTCVideoRenderer,
-                objectFit: RTCVideoViewObjectFit.RTCVideoViewObjectFitCover,
+            left: _localViewOffset.dx,
+            top: _localViewOffset.dy,
+            child: Draggable(
+              feedback: Container(
+                height: 150,
+                width: 120,
+                child: RTCVideoView(
+                  _localRTCVideoRenderer,
+                  objectFit: RTCVideoViewObjectFit.RTCVideoViewObjectFitCover,
+                ),
+              ),
+              childWhenDragging: Container(),
+              onDragEnd: (details) {
+                setState(() {
+                  _localViewOffset = details.offset;
+                });
+              },
+              child: Container(
+                height: 150,
+                width: 120,
+                child: RTCVideoView(
+                  _localRTCVideoRenderer,
+                  objectFit: RTCVideoViewObjectFit.RTCVideoViewObjectFitCover,
+                ),
               ),
             ),
           ),
@@ -556,6 +607,30 @@ Widget _deafMuteView() {
               ),
             ),
           ),
+          Positioned(
+            left: _notifierOffset.dx,
+            top: _notifierOffset.dy,
+            child: Draggable(
+              feedback: CircleAvatar(
+                radius: 30,
+                backgroundImage: _chatUserDetail != null
+                ? NetworkImage(chatUserProfileImage)
+                : AssetImage('assets/person.png') as ImageProvider,
+              ),
+              childWhenDragging: Container(),
+              onDraggableCanceled: (velocity, offset) {
+                setState(() {
+                  _notifierOffset = offset;
+                });
+              },
+              child: CircleAvatar(
+                backgroundImage: _chatUserDetail != null
+                ? NetworkImage(chatUserProfileImage)
+                : AssetImage('assets/person.png') as ImageProvider,
+                radius: 30,
+              ),
+            ),
+          ),
         ],
       ),
     ),
@@ -573,14 +648,30 @@ Widget _blindNormalView() {
             objectFit: RTCVideoViewObjectFit.RTCVideoViewObjectFitCover,
           ),
           Positioned(
-            right: 20,
-            top: 20,
-            child: SizedBox(
-              height: 150,
-              width: 120,
-              child: RTCVideoView(
-                _localRTCVideoRenderer,
-                objectFit: RTCVideoViewObjectFit.RTCVideoViewObjectFitCover,
+            right: _localViewOffset.dx,
+            top: _localViewOffset.dy,
+            child: Draggable(
+              feedback: Container(
+                height: 150,
+                width: 120,
+                child: RTCVideoView(
+                  _localRTCVideoRenderer,
+                  objectFit: RTCVideoViewObjectFit.RTCVideoViewObjectFitCover,
+                ),
+              ),
+              childWhenDragging: Container(),
+              onDragEnd: (details) {
+                setState(() {
+                  _localViewOffset = details.offset;
+                });
+              },
+              child: Container(
+                height: 150,
+                width: 120,
+                child: RTCVideoView(
+                  _localRTCVideoRenderer,
+                  objectFit: RTCVideoViewObjectFit.RTCVideoViewObjectFitCover,
+                ),
               ),
             ),
           ),
@@ -591,8 +682,8 @@ Widget _blindNormalView() {
             child: Container(
               padding: EdgeInsets.all(10),
               decoration: BoxDecoration(
-                color: Colors.blue, 
-                borderRadius: BorderRadius.circular(15), 
+                color: Colors.blue,
+                borderRadius: BorderRadius.circular(15),
               ),
               child: Center(
                 child: Text(
@@ -610,9 +701,14 @@ Widget _blindNormalView() {
               backgroundColor: Colors.green,
               maxRadius: 30,
               child: IconButton(
-                icon: Icon(_speechToText.isNotListening ? Icons.mic_off : Icons.mic,
-                    color: Colors.white, size: 40),
-                onPressed: _speechToText.isNotListening ? _startListening : _stopListening,
+                icon: Icon(
+                  _speechToText.isNotListening ? Icons.mic_off : Icons.mic,
+                  color: Colors.white,
+                  size: 40,
+                ),
+                onPressed: _speechToText.isNotListening
+                    ? _startListening
+                    : _stopListening,
               ),
             ),
           ),
@@ -633,9 +729,10 @@ Widget _blindNormalView() {
                       onPressed: _switchCamera,
                     ),
                     IconButton(
-                      icon: Icon(isVideoOn
-                          ? Icons.videocam
-                          : Icons.videocam_off,
+                      icon: Icon(
+                          isVideoOn
+                              ? Icons.videocam
+                              : Icons.videocam_off,
                           color: Colors.white,
                           size: 30),
                       onPressed: _toggleCamera,
@@ -660,7 +757,7 @@ Widget _blindNormalView() {
                       child: IconButton(
                         icon: const Icon(Icons.person_add,
                             color: Colors.white, size: 30),
-                        onPressed: (){
+                        onPressed: () {
                           _showUserDialog();
                         },
                       ),
@@ -670,16 +767,41 @@ Widget _blindNormalView() {
               ),
             ),
           ),
+          Positioned(
+            left: _notifierOffset.dx,
+            top: _notifierOffset.dy,
+            child: Draggable(
+              feedback: CircleAvatar(
+                radius: 30,
+                backgroundImage: _chatUserDetail != null
+                ? NetworkImage(chatUserProfileImage)
+                : AssetImage('assets/person.png') as ImageProvider,
+              ),
+              childWhenDragging: Container(),
+              onDraggableCanceled: (velocity, offset) {
+                setState(() {
+                  _notifierOffset = offset;
+                });
+              },
+              child: CircleAvatar(
+                backgroundImage: _chatUserDetail != null
+                ? NetworkImage(chatUserProfileImage)
+                : AssetImage('assets/person.png') as ImageProvider,
+                radius: 30,
+              ),
+            ),
+          ),
         ],
       ),
     ),
   );
 }
 
-void _showUserDialog() {
+
+void _showUserDialog()async {
   final userIdProvider = Provider.of<UserIdProvider>(context, listen: false);
   int uid = userIdProvider.userId;
-  _fetchContacts(uid);
+  await _fetchContacts(uid);
   showDialog(
     context: context,
     builder: (BuildContext context) {

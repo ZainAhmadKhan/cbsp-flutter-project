@@ -1,6 +1,7 @@
+import 'dart:async';
 import 'dart:io';
 import 'dart:typed_data';
-import 'dart:async';
+import 'package:camera/camera.dart';
 import 'package:cbsp_flutter_app/APIsHandler/ContactsAPI.dart';
 import 'package:cbsp_flutter_app/APIsHandler/ModelAPI.dart';
 import 'package:cbsp_flutter_app/APIsHandler/UserAPI.dart';
@@ -33,7 +34,6 @@ class ChatScreen extends StatefulWidget {
 class _ChatScreenState extends State<ChatScreen> {
   final socket = SignallingService.instance.socket;
   final _localRTCVideoRenderer = RTCVideoRenderer();
-  final _remoteRTCVideoRenderer = RTCVideoRenderer();
   MediaStream? _localStream;
   RTCPeerConnection? _rtcPeerConnection;
   List<RTCIceCandidate> rtcIceCadidates = [];
@@ -49,12 +49,15 @@ class _ChatScreenState extends State<ChatScreen> {
   late MediaStreamTrack _localVideoTrack;
   String _selectedOption = 'W'; 
   List<UserContact> contacts = [];
+  String? _disability;
 
   @override
   void initState() {
     super.initState();
     _localRTCVideoRenderer.initialize();
-    _remoteRTCVideoRenderer.initialize();
+    _fetchCaller1Details(int.parse(widget.caller1Id));
+    _fetchCaller2Details(int.parse(widget.caller2Id));
+    _fetchCalleeDetails(int.parse(widget.calleeId));
 
     socket!.on("transcribedText", (data) {
       String text = data['text'];
@@ -63,13 +66,20 @@ class _ChatScreenState extends State<ChatScreen> {
         _startClearTextTimer();
       });
     });
+
     socket!.on("endCall", (data) {
       // _leaveCall();
       Navigator.pop(context);
     });
+
+    socket!.emit('chatConnected', {
+      "calleeId": widget.calleeId,
+      "caller1Id": widget.caller1Id,
+      "caller2Id": widget.caller2Id,
+    });
+    _setupPeerConnection();
     _initSpeech();
   }
-
   void _startClearTextTimer() {
     _textClearTimer?.cancel();
     _textClearTimer = Timer(Duration(seconds: 5), () {
@@ -94,7 +104,7 @@ class _ChatScreenState extends State<ChatScreen> {
     try {
       final userDetails = await UserApiHandler.fetchUserDetails(userId);
       setState(() {
-        _caller1Detail=userDetails;
+        _caller2Detail=userDetails;
       });
     } catch (e) {
       _showErrorMessage("Failed to fetch Caller 2 details");
@@ -104,10 +114,10 @@ class _ChatScreenState extends State<ChatScreen> {
     try {
       final userDetails = await UserApiHandler.fetchUserDetails(userId);
       setState(() {
-        _calleeDetail=userDetails;
+        _disability= userDetails.disabilityType;
       });
     } catch (e) {
-      _showErrorMessage("Failed to fetch Caller 2 details");
+      _showErrorMessage("Failed to fetch user details");
     }
   }
 
@@ -119,6 +129,44 @@ class _ChatScreenState extends State<ChatScreen> {
       ),
     );
   }
+
+  _setupPeerConnection() async {
+    _rtcPeerConnection = await createPeerConnection({
+      'iceServers': [
+        {
+          'urls': [
+            'stun:stun1.l.google.com:19302',
+            'stun:stun2.l.google.com:19302'
+          ]
+        }
+      ]
+    });
+
+    _localStream = await navigator.mediaDevices.getUserMedia({
+      'audio': isAudioOn,
+      'video': isVideoOn
+          ? {'facingMode': isFrontCameraSelected ? 'user' : 'environment'}
+          : false,
+    });
+
+    _localVideoTrack = _localStream!.getVideoTracks().first;
+
+    _localStream!.getTracks().forEach((track) {
+      _rtcPeerConnection!.addTrack(track, _localStream!);
+    });
+
+    setState(() {
+      _localRTCVideoRenderer.srcObject = _localStream;
+    });
+
+    if(_disability == 'Deaf and Mute'){
+    _timer = Timer.periodic(Duration(seconds: 3), (timer) async {
+      await captureFrame();
+    });
+    }
+  }
+
+  
 
   void _initSpeech() async {
     _speechEnabled = await _speechToText.initialize();
@@ -158,13 +206,6 @@ class _ChatScreenState extends State<ChatScreen> {
     setState(() {});
   }
 
-  @override
-  void setState(fn) {
-    if (mounted) {
-      super.setState(fn);
-    }
-  }
-
   void _showMessage(String message) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
@@ -174,55 +215,44 @@ class _ChatScreenState extends State<ChatScreen> {
     );
   }
 
-//   Future<void> captureFrame() async {
-//   try {
-//     var buffer = await _localVideoTrack.captureFrame();
-//     Uint8List pngBytes = buffer.asUint8List();
+  Future<void> captureFrame() async {
+  try {
+    var buffer = await _localVideoTrack.captureFrame();
+    Uint8List pngBytes = buffer.asUint8List();
 
-//     final directory = await getApplicationDocumentsDirectory();
-//     final imagePath = '${directory.path}/${DateTime.now().millisecondsSinceEpoch}.png';
-//     final imageFile = File(imagePath);
-//     await imageFile.writeAsBytes(pngBytes);
-//     final Map<String, dynamic>? result;
+    final directory = await getApplicationDocumentsDirectory();
+    final imagePath = '${directory.path}/${DateTime.now().millisecondsSinceEpoch}.png';
+    final imageFile = File(imagePath);
+    await imageFile.writeAsBytes(pngBytes);
+    final Map<String, dynamic>? result;
 
-//     if (_selectedOption == "W") {
-//       result = await ModelAPI.detectAlphabets(imageFile);
-//     } else {
-//       result = await ModelAPI.detectPhrases(imageFile);
-//     }
+    if (_selectedOption == "W") {
+      result = await ModelAPI.detectAlphabets(imageFile);
+    } else {
+      result = await ModelAPI.detectPhrases(imageFile);
+    }
 
-//     if (result != null) {
-//       setState(() {
-//         if (_selectedOption == "P") {
-//          _transcribedText = '${result!['label']}';
-//         } else {
-//           _transcribedText = '${result!['class_name']}';
-//         }
-//         _startClearTextTimer();
-//         if(widget.isCaller)
-//       {
-//         socket!.emit('transcribedText', {
-//         'text': _transcribedText,
-//         'sender': widget.callerId,
-//         'receiver': widget.calleeId,
-//       });
-//       }
-//       else
-//       {
-//          socket!.emit('transcribedText', {
-//         'text': _transcribedText,
-//         'sender': widget.calleeId,
-//         'receiver': widget.callerId,
-//       }); 
-//       }
-//       });
-//     } else {
-//       print('Result is null');
-//     }
-//   } catch (e) {
-//     print('Error: $e');
-//   }
-// }
+    if (result != null) {
+      setState(() {
+        if (_selectedOption == "P") {
+         _transcribedText = '${result!['label']}';
+        } else {
+          _transcribedText = '${result!['class_name']}';
+        }
+        _startClearTextTimer();
+          socket!.emit('transcribedText', {
+            'text': _transcribedText,
+            'sender': widget.caller1Id,
+            'receiver': widget.calleeId,
+          });    
+      });
+    } else {
+      print('Result is null');
+    }
+  } catch (e) {
+    print('Error: $e');
+  }
+}
 
 //   _leaveCall() {
 //     if(widget.isCaller){
@@ -279,27 +309,25 @@ class _ChatScreenState extends State<ChatScreen> {
       _showErrorMessage("No Contacts Load Error!");
     }
   }
+  String get caller1ProfileImage {
+    String imageUrl = '$Url/profile_pictures/';
+    return _caller1Detail != null ? imageUrl + _caller1Detail!.profilePicture : 'assets/person.png';
+  }
+
+  String get caller2ProfileImage {
+    String imageUrl = '$Url/profile_pictures/';
+    return _caller2Detail != null ? imageUrl + _caller2Detail!.profilePicture : 'assets/person.png';
+  }
 
 @override
 Widget build(BuildContext context) {
-
-    _fetchCaller1Details(int.parse(widget.caller1Id));
-    _fetchCaller2Details(int.parse(widget.caller2Id));
-    _fetchCalleeDetails(int.parse(widget.calleeId));
-  
-
-  if (_calleeDetail!.disabilityType == 'Deaf and Mute') {
+  if (_disability == 'Deaf and Mute') {
     return _deafMuteView();
   } else{
     return _blindNormalView();
   } 
 }
-
 Widget _deafMuteView() {
-  String imageUrl = '$Url/profile_pictures/';
-  String Caller1ProfileImage = _caller1Detail != null ? imageUrl + _caller1Detail!.profilePicture : 'assets/person.png';
-  String Caller2ProfileImage = _caller2Detail != null ? imageUrl + _caller2Detail!.profilePicture : 'assets/person.png';
-
   return Scaffold(
     body: SafeArea(
       child: Stack(
@@ -315,7 +343,7 @@ Widget _deafMuteView() {
                       CircleAvatar(
                         radius: 50,
                         backgroundImage: _caller1Detail != null
-                            ? NetworkImage(Caller1ProfileImage)
+                            ? NetworkImage(caller1ProfileImage)
                             : AssetImage('assets/person.png') as ImageProvider,
                       ),
                       SizedBox(height: 5.0),
@@ -327,12 +355,12 @@ Widget _deafMuteView() {
                       Container(
                         padding: EdgeInsets.all(10),
                         decoration: BoxDecoration(
-                          color: Colors.blue,
+                          color: Colors.white,
                           borderRadius: BorderRadius.circular(15),
                         ),
                         child: Center(
                           child: Text(
-                            'Transcript Text 1', 
+                            _transcribedText, 
                             style: TextStyle(color: Colors.black),
                           ),
                         ),
@@ -343,14 +371,14 @@ Widget _deafMuteView() {
               ),
               Expanded(
                 child: Container(
-                  color: Colors.greenAccent, 
+                  color: Colors.white, 
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       CircleAvatar(
                         radius: 50,
                         backgroundImage: _caller2Detail != null
-                            ? NetworkImage(Caller2ProfileImage)
+                            ? NetworkImage(caller2ProfileImage)
                             : AssetImage('assets/person.png') as ImageProvider,
                       ),
                       SizedBox(height: 5.0),
@@ -362,7 +390,7 @@ Widget _deafMuteView() {
                       Container(
                         padding: EdgeInsets.all(10),
                         decoration: BoxDecoration(
-                          color: Colors.blue,
+                          color: Colors.blueAccent,
                           borderRadius: BorderRadius.circular(15),
                         ),
                         child: Center(
@@ -439,6 +467,7 @@ Widget _deafMuteView() {
                         icon: Icon(Icons.call_end,
                             color: Colors.white, size: 30),
                         onPressed:() {
+                          Navigator.pop(context);
                           // _leaveCall,
                         },
                       ),
@@ -461,102 +490,152 @@ Widget _blindNormalView() {
     body: SafeArea(
       child: Stack(
         children: [
-          RTCVideoView(
-            _remoteRTCVideoRenderer,
-            objectFit: RTCVideoViewObjectFit.RTCVideoViewObjectFitCover,
-          ),
-          Positioned(
-            right: 20,
-            top: 20,
-            child: SizedBox(
-              height: 150,
-              width: 120,
-              child: RTCVideoView(
-                _localRTCVideoRenderer,
-                objectFit: RTCVideoViewObjectFit.RTCVideoViewObjectFitCover,
-              ),
-            ),
-          ),
-          Positioned(
-            bottom: 150,
-            left: 20,
-            right: 20,
-            child: Container(
-              padding: EdgeInsets.all(10),
-              decoration: BoxDecoration(
-                color: Colors.blue, 
-                borderRadius: BorderRadius.circular(15), 
-              ),
-              child: Center(
-                child: Text(
-                  _transcribedText,
-                  style: TextStyle(color: Colors.black),
+          Column(
+            children: [
+              Expanded(
+                child: Container(
+                  color: Colors.blueAccent, 
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      CircleAvatar(
+                        radius: 50,
+                        backgroundImage: _caller1Detail != null
+                            ? NetworkImage(caller1ProfileImage)
+                            : AssetImage('assets/person.png') as ImageProvider,
+                      ),
+                      SizedBox(height: 5.0),
+                      Text(
+                        '${_caller1Detail?.fname} ${_caller1Detail?.lname}', 
+                        style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                      ),
+                      SizedBox(height: 10),
+                      Container(
+                        padding: EdgeInsets.all(10),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(15),
+                        ),
+                        child: Center(
+                          child: Text(
+                            _transcribedText, 
+                            style: TextStyle(color: Colors.black),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ),
-            ),
-          ),
-          Positioned(
-            bottom: 80,
-            left: 20,
-            right: 20,
-            child: CircleAvatar(
-              backgroundColor: Colors.green,
-              maxRadius: 30,
-              child: IconButton(
-                icon: Icon(_speechToText.isNotListening ? Icons.mic_off : Icons.mic,
-                    color: Colors.white, size: 40),
-                onPressed:(){
-                  //  _speechToText.isNotListening ? _startListening : _stopListening
-                   },
-              ),
-            ),
-          ),
-          Positioned(
-            bottom: 0,
-            left: 0,
-            right: 0,
-            child: ClipPath(
-              child: BottomAppBar(
-                height: 75,
-                color: Colors.blueGrey[900],
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                  children: [
-                    IconButton(
-                      icon: Icon(Icons.switch_camera,
-                          color: Colors.white, size: 30),
-                      onPressed: _switchCamera,
-                    ),
-                    IconButton(
-                      icon: Icon(isVideoOn
-                          ? Icons.videocam
-                          : Icons.videocam_off,
-                          color: Colors.white,
-                          size: 30),
-                      onPressed: _toggleCamera,
-                    ),
-                    IconButton(
-                      icon: Icon(isAudioOn ? Icons.mic : Icons.mic_off,
-                          color: Colors.white, size: 30),
-                      onPressed: _toggleMic,
-                    ),
-                    CircleAvatar(
-                      backgroundColor: Colors.red,
-                      maxRadius: 23,
-                      child: IconButton(
-                        icon: Icon(Icons.call_end,
-                            color: Colors.white, size: 30),
-                        onPressed: (){
-                          // _leaveCall
-
-                        },
+              Expanded(
+                child: Container(
+                  color: Colors.white, 
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      CircleAvatar(
+                        radius: 50,
+                        backgroundImage: _caller2Detail != null
+                            ? NetworkImage(caller2ProfileImage)
+                            : AssetImage('assets/person.png') as ImageProvider,
                       ),
-                    ),
+                      SizedBox(height: 5.0),
+                      Text(
+                        '${_caller2Detail?.fname} ${_caller2Detail?.lname}', 
+                        style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                      ),
+                      SizedBox(height: 10),
+                      Container(
+                        padding: EdgeInsets.all(10),
+                        decoration: BoxDecoration(
+                          color: Colors.blueAccent,
+                          borderRadius: BorderRadius.circular(15),
+                        ),
+                        child: Center(
+                          child: Text(
+                            _transcribedText,
+                            style: TextStyle(color: Colors.black),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              Container(
+                height: 60,
+                color: Colors.blueGrey[900], 
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Center(
+                      child: Row(
+                        children: [
+                          SizedBox(width: 30,),
+                          Container(
+                            width: 250,
+                            padding: EdgeInsets.all(10),
+                            decoration: BoxDecoration(
+                              color: Colors.green, 
+                              borderRadius: BorderRadius.circular(15), 
+                            ),
+                            child: Center(
+                              child: Text(
+                                _transcribedText,
+                                style: TextStyle(color: Colors.black),
+                              ),
+                            ),
+                          ),
+                          SizedBox(width: 10,),
+                          CircleAvatar(
+                            backgroundColor: Colors.green,
+                            maxRadius: 25,
+                            child: IconButton(
+                              icon: Icon(_speechToText.isNotListening ? Icons.mic_off : Icons.mic,
+                                  color: Colors.white, size: 30),
+                              onPressed:(){
+                                //  _speechToText.isNotListening ? _startListening : _stopListening
+                                },
+                            ),
+                          ),
+                          SizedBox(width: 10,),
+                        ],
+                      ), 
+                    ),    
                   ],
                 ),
               ),
-            ),
+              Container(
+                child: BottomAppBar(
+                  height: 75,
+                  color: Colors.blueGrey[900],
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                    children: [
+                      IconButton(
+                        icon: Icon(Icons.keyboard,
+                            color: Colors.white, size: 40),
+                        onPressed: _toggleMic,
+                      ),
+                      CircleAvatar(
+                        backgroundColor: Colors.red,
+                        maxRadius: 23,
+                        child: IconButton(
+                          icon: Icon(Icons.call_end,
+                              color: Colors.white, size: 30),
+                          onPressed: (){
+                            // _leaveCall
+                            Navigator.pop(context);
+                          },
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
           ),
+          
         ],
       ),
     ),
@@ -566,7 +645,6 @@ Widget _blindNormalView() {
   @override
   void dispose() {
     _localRTCVideoRenderer.dispose();
-    _remoteRTCVideoRenderer.dispose();
     _localStream?.dispose();
     _rtcPeerConnection?.dispose();
     _speechToText.stop();
