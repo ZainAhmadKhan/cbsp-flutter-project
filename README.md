@@ -114,7 +114,7 @@ flutter run
 
   <h2>📬 Contact</h2>
   <p>
-    Created with ❤️ by <strong>[Your Name]</strong><br>
+    Created with ❤️ by <strong>Zain Ahamd Khan</strong><br>
     Email: <a href="mailto:mustafvi345@gmail.com">mustafvi345@gmail.com</a>
   </p>
 
