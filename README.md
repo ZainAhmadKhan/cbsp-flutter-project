@@ -1,55 +1,5 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Communication Between Special People</title>
-  <style>
-    body {
-      font-family: Arial, sans-serif;
-      line-height: 1.7;
-      padding: 20px;
-      background-color: #f9f9f9;
-      color: #333;
-    }
-    h1, h2, h3 {
-      color: #2c3e50;
-    }
-    code {
-      background-color: #eee;
-      padding: 2px 6px;
-      border-radius: 4px;
-      font-family: monospace;
-    }
-    pre {
-      background-color: #eee;
-      padding: 10px;
-      border-radius: 6px;
-      overflow-x: auto;
-    }
-    a {
-      color: #3498db;
-      text-decoration: none;
-    }
-    a:hover {
-      text-decoration: underline;
-    }
-    ul {
-      margin-left: 20px;
-    }
-    blockquote {
-      background-color: #eaf0f6;
-      border-left: 5px solid #3498db;
-      margin: 20px 0;
-      padding: 10px 20px;
-      color: #2c3e50;
-    }
-    hr {
-      border: 1px solid #ddd;
-      margin: 40px 0;
-    }
-  </style>
-</head>
 <body>
 
   <h1>🤝 Communication Between Special People</h1>
@@ -130,9 +80,6 @@ flutter run
   </blockquote>
 
   <hr>
-
-  <h2>📸 Screenshots</h2>
-  <p><em>(Add screenshots or GIFs of your UI here once available)</em></p>
 
   <hr>
 
